@@ -1,0 +1,210 @@
+import React, { useState, useEffect } from 'react';
+import { Routes, Route, Link, useNavigate } from 'react-router-dom';
+import api from '../utils/api';
+import { PlusCircle, MapPin, Clock, AlertCircle } from 'lucide-react';
+
+interface Complaint {
+  id: number;
+  title: string;
+  description: string;
+  status: string;
+  location: string;
+  ai_priority?: string;
+  created_at: string;
+}
+
+const CitizenList = () => {
+  const [complaints, setComplaints] = useState<Complaint[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchComplaints = async () => {
+      try {
+        const res = await api.get('/complaints/');
+        setComplaints(res.data);
+      } catch (err) {
+        console.error("Failed to load complaints");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchComplaints();
+  }, []);
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">My Complaints</h1>
+          <p className="text-slate-500">Track and manage your reported issues.</p>
+        </div>
+        <Link
+          to="/citizen/create"
+          className="flex items-center space-x-2 bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors"
+        >
+          <PlusCircle className="h-5 w-5" />
+          <span>New Report</span>
+        </Link>
+      </div>
+
+      {loading ? (
+        <div className="text-center py-12 text-slate-500">Loading your complaints...</div>
+      ) : complaints.length === 0 ? (
+        <div className="text-center py-16 bg-white rounded-xl shadow-sm border border-slate-200">
+          <div className="mx-auto h-12 w-12 bg-slate-100 rounded-full flex items-center justify-center mb-4">
+            <AlertCircle className="h-6 w-6 text-slate-400" />
+          </div>
+          <h3 className="text-lg font-medium text-slate-900">No complaints reported</h3>
+          <p className="text-slate-500 mt-1">You haven't reported any issues yet.</p>
+        </div>
+      ) : (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {complaints.map(complaint => (
+            <div key={complaint.id} className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 hover-lift transition-all">
+              <div className="flex justify-between items-start mb-4">
+                <h3 className="font-bold text-lg text-slate-900 line-clamp-1">{complaint.title}</h3>
+                <span className={`px-2.5 py-1 text-xs font-medium rounded-full ${
+                  complaint.status === 'RESOLVED' ? 'bg-green-100 text-green-800' :
+                  complaint.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-800' :
+                  'bg-yellow-100 text-yellow-800'
+                }`}>
+                  {complaint.status.replace('_', ' ')}
+                </span>
+              </div>
+              <p className="text-slate-600 text-sm line-clamp-2 mb-4">{complaint.description}</p>
+              
+              <div className="space-y-2 mt-auto border-t border-slate-100 pt-4">
+                {complaint.location && (
+                  <div className="flex items-center text-xs text-slate-500">
+                    <MapPin className="h-4 w-4 mr-1 text-slate-400" />
+                    {complaint.location}
+                  </div>
+                )}
+                <div className="flex justify-between items-center text-xs text-slate-500">
+                  <div className="flex items-center">
+                    <Clock className="h-4 w-4 mr-1 text-slate-400" />
+                    {new Date(complaint.created_at).toLocaleDateString()}
+                  </div>
+                  {complaint.ai_priority && (
+                    <span className="font-medium text-purple-600">AI Priority: {complaint.ai_priority}</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const CreateComplaint = () => {
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [location, setLocation] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      await api.post('/complaints/', {
+        title,
+        description,
+        location
+      });
+      navigate('/citizen');
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Failed to submit complaint.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 sm:p-10">
+        <h1 className="text-2xl font-bold text-slate-900 mb-6">Report a New Issue</h1>
+        
+        {error && (
+          <div className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-md">
+            <p className="text-sm text-red-700">{error}</p>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Title</label>
+            <input
+              type="text"
+              required
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500"
+              placeholder="E.g., Broken streetlight on 5th Avenue"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
+            <textarea
+              required
+              rows={4}
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500"
+              placeholder="Please provide details about the issue..."
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+            <p className="mt-1 text-xs text-slate-500">
+              Note: This text is safely encoded before displaying. <br/>
+              <b>Security Concept:</b> No matter what HTML/JS you enter here, our Stored XSS protections will neutralize it.
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Location</label>
+            <input
+              type="text"
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500"
+              placeholder="Where is the issue located?"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+            />
+          </div>
+
+          <div className="flex items-center justify-end space-x-4 pt-4">
+            <button
+              type="button"
+              onClick={() => navigate('/citizen')}
+              className="text-slate-600 hover:text-slate-900 font-medium px-4 py-2"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="bg-primary-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-primary-700 transition-colors disabled:opacity-70 flex items-center"
+            >
+              {loading ? 'Submitting...' : 'Submit Report'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+const CitizenDashboard = () => {
+  return (
+    <Routes>
+      <Route path="/" element={<CitizenList />} />
+      <Route path="/create" element={<CreateComplaint />} />
+    </Routes>
+  );
+};
+
+export default CitizenDashboard;
