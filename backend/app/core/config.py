@@ -1,5 +1,5 @@
 from pydantic_settings import BaseSettings
-from pydantic import Field
+from pydantic import Field, field_validator
 from typing import Optional, List
 
 class Settings(BaseSettings):
@@ -11,6 +11,13 @@ class Settings(BaseSettings):
     
     # Database
     DATABASE_URL: str = Field(..., description="PostgreSQL database URL")
+
+    @field_validator("DATABASE_URL")
+    @classmethod
+    def assemble_db_connection(cls, v: str) -> str:
+        if v and v.startswith("postgres://"):
+            return v.replace("postgres://", "postgresql://", 1)
+        return v
     
     # Auth
     JWT_SECRET: str = Field(..., description="Secret key for JWT generation")
