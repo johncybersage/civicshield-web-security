@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.openapi.docs import get_redoc_html
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
@@ -9,7 +10,8 @@ from app.api.api import api_router
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
-    openapi_url="/openapi.json"
+    openapi_url="/openapi.json",
+    redoc_url=None
 )
 
 # CORS
@@ -38,7 +40,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
                 "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
                 "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; "
                 "font-src 'self' https://fonts.gstatic.com; "
-                "img-src 'self' data: https://fastapi.tiangolo.com; "
+                "img-src 'self' data: https://fastapi.tiangolo.com https://cdn.redoc.ly; "
                 "worker-src 'self' blob:;"
             )
         else:
@@ -49,6 +51,14 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         return response
 
 app.add_middleware(SecurityHeadersMiddleware)
+
+@app.get("/redoc", include_in_schema=False)
+async def redoc_html():
+    return get_redoc_html(
+        openapi_url="/openapi.json",
+        title=f"{settings.PROJECT_NAME} - ReDoc",
+        redoc_js_url="https://cdn.jsdelivr.net/npm/redoc/bundles/redoc.standalone.js",
+    )
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
