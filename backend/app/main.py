@@ -31,7 +31,8 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         
         # Apply relaxed CSP for API documentation endpoints to allow Swagger UI / ReDoc to load CDN resources
-        if request.url.path in ["/docs", "/redoc"]:
+        path = request.url.path
+        if path.startswith("/docs") or path.startswith("/redoc") or path.startswith("/openapi.json"):
             response.headers["Content-Security-Policy"] = (
                 "default-src 'self'; "
                 "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
