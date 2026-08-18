@@ -5,22 +5,22 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
 
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+
 from app.core.config import settings
+from app.core.rate_limit import limiter
 from app.api.api import api_router
+from app.core.database import Base, engine
+
+# Ensure database tables are created (critical for Render deployment where alembic isn't run automatically)
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
     openapi_url="/openapi.json",
     redoc_url=None
 )
-
-from app.core.database import Base, engine
-# Ensure database tables are created (critical for Render deployment where alembic isn't run automatically)
-Base.metadata.create_all(bind=engine)
-
-from slowapi import _rate_limit_exceeded_handler
-from slowapi.errors import RateLimitExceeded
-from app.core.rate_limit import limiter
 
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
