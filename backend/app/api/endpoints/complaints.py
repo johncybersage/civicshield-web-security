@@ -14,6 +14,7 @@ from app.api.deps import get_current_user, get_current_active_officer
 from app.services.ai_service import analyze_complaint
 from app.api.endpoints.auth import log_audit
 import bleach
+from app.core.rate_limit import limiter
 
 router = APIRouter()
 
@@ -25,6 +26,7 @@ def sanitize_text(text: str) -> str:
     return bleach.clean(text, tags=[], attributes={}, strip=True)
 
 @router.post("/", response_model=ComplaintSchema)
+@limiter.limit("10/minute")
 def create_complaint(
     *,
     db: Session = Depends(get_db),

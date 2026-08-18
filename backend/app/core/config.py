@@ -1,15 +1,19 @@
 from pydantic_settings import BaseSettings
-from typing import Optional
+from pydantic import Field
+from typing import Optional, List
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "CivicShield"
     API_V1_STR: str = "/api"
     
+    # CORS
+    BACKEND_CORS_ORIGINS: List[str] = ["http://localhost:5173", "http://localhost:3000"]
+    
     # Database
-    DATABASE_URL: str = "postgresql://civicshield_user:civicshield_dev_password@localhost:5432/civicshield_db"
+    DATABASE_URL: str = Field(..., description="PostgreSQL database URL")
     
     # Auth
-    JWT_SECRET: str = "civicshield_super_secret_dev_key"
+    JWT_SECRET: str = Field(..., description="Secret key for JWT generation")
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     
@@ -18,7 +22,7 @@ class Settings(BaseSettings):
     
     # Admin
     ADMIN_EMAIL: str = "admin@demo.local"
-    ADMIN_PASSWORD: str = "admin_password"
+    ADMIN_PASSWORD: str = Field(..., description="Default admin password")
 
     class Config:
         env_file = ".env"

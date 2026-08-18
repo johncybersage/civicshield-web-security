@@ -13,8 +13,11 @@ import uuid
 client = TestClient(app)
 
 def test_health():
-    # FastAPI usually has / or we can just test docs
     response = client.get("/docs")
+    assert response.status_code == 200
+    response = client.get("/redoc")
+    assert response.status_code == 200
+    response = client.get("/openapi.json")
     assert response.status_code == 200
 
 def test_auth_and_rbac():
@@ -24,14 +27,14 @@ def test_auth_and_rbac():
         "name": "Test User",
         "email": unique_email,
         "password": "testpassword123"
-    })
+    }, headers={"X-Forwarded-For": "10.0.0.1"})
     assert res.status_code == 200, res.text
     
     # 2. Login
     res = client.post("/api/auth/login", data={
         "username": unique_email,
         "password": "testpassword123"
-    })
+    }, headers={"X-Forwarded-For": "10.0.0.1"})
     assert res.status_code == 200
     token = res.json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
@@ -65,7 +68,7 @@ def test_xss_protection_api():
     res = client.post("/api/auth/login", data={
         "username": "citizen@demo.local",
         "password": "citizen_password"
-    })
+    }, headers={"X-Forwarded-For": "10.0.0.2"})
     token = res.json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
     

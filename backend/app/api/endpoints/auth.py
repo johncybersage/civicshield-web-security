@@ -11,6 +11,7 @@ from app.models.audit import AuditLog
 from app.schemas.user import UserCreate, User as UserSchema, Token
 from app.security.auth import verify_password, get_password_hash, create_access_token
 from app.api.deps import get_current_user
+from app.core.rate_limit import limiter
 
 router = APIRouter()
 
@@ -21,6 +22,7 @@ def log_audit(db: Session, action: str, user_id: int = None, request: Request = 
     db.commit()
 
 @router.post("/register", response_model=UserSchema)
+@limiter.limit("5/minute")
 def register(
     *,
     db: Session = Depends(get_db),
@@ -48,6 +50,7 @@ def register(
     return user
 
 @router.post("/login", response_model=Token)
+@limiter.limit("5/minute")
 def login_access_token(
     db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm = Depends(), request: Request = None
 ) -> Any:
