@@ -15,9 +15,33 @@ from app.core.rate_limit import limiter
 
 router = APIRouter()
 
-def log_audit(db: Session, action: str, user_id: int = None, request: Request = None, metadata_info: str = None):
-    ip = request.client.host if request else None
-    log = AuditLog(user_id=user_id, action=action, ip_address=ip, metadata_info=metadata_info)
+def log_audit(
+    db: Session,
+    action: str,
+    user_id: int = None,
+    request: Request = None,
+    metadata_info: str = None
+):
+    ip = None
+
+    if request:
+        ip = (
+            request.headers.get("X-Forwarded-For", "")
+            .split(",")[0]
+            .strip()
+            or None
+        )
+
+        if not ip and request.client:
+            ip = request.client.host
+
+    log = AuditLog(
+        user_id=user_id,
+        action=action,
+        ip_address=ip,
+        metadata_info=metadata_info
+    )
+
     db.add(log)
     db.commit()
 
