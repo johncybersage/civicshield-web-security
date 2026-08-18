@@ -14,6 +14,10 @@ app = FastAPI(
     redoc_url=None
 )
 
+from app.core.database import Base, engine
+# Ensure database tables are created (critical for Render deployment where alembic isn't run automatically)
+Base.metadata.create_all(bind=engine)
+
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from app.core.rate_limit import limiter
