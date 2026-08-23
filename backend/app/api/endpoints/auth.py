@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import timedelta, datetime
 from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.security import OAuth2PasswordRequestForm
@@ -8,10 +8,13 @@ from app.core.database import get_db
 from app.core.config import settings
 from app.models.user import User, UserRole
 from app.models.audit import AuditLog
+from app.models.otp import OTPAttempt
 from app.schemas.user import UserCreate, User as UserSchema, Token
+from app.schemas.otp import OTPRequest, OTPVerify
 from app.security.auth import verify_password, get_password_hash, create_access_token
 from app.api.deps import get_current_user
 from app.core.rate_limit import limiter
+from app.services.otp_service import generate_otp, hash_otp, send_otp_sms
 
 router = APIRouter()
 
@@ -57,7 +60,7 @@ def register(
     if user:
         raise HTTPException(
             status_code=400,
-            detail="The user with this username already exists in the system.",
+            detail="The user with this email already exists in the system.",
         )
     user = User(
         email=user_in.email,
@@ -101,3 +104,103 @@ def read_users_me(
     current_user: User = Depends(get_current_user),
 ) -> Any:
     return current_user
+
+@router.post("/request-otp")
+@limiter.limit("3/minute")
+def request_otp(
+    *,
+    db: Session = Depends(get_db),
+    otp_request: OTPRequest,
+    current_user: User = Depends(get_current_user),
+    request: Request
+) -> Any:
+    """Request an OTP for phone verification."""
+    if current_user.is_phone_verified:
+        raise HTTPException(status_code=400, detail="Phone number is already verified.")
+    
+    # Check if this phone number is used by another verified user
+    existing_phone_user = db.query(User).filter(User.phone_number == otp_request.phone_number, User.is_phone_verified == True).first()
+    if existing_phone_user and existing_phone_user.id != current_user.id:
+        raise HTTPException(status_code=400, detail="Phone number is already in use by another verified account.")
+
+    # Phone-number based rate limiting (max 3 requests per minute per phone number)
+    recent_attempts = db.query(OTPAttempt).filter(
+        OTPAttempt.phone_number == otp_request.phone_number,
+        OTPAttempt.created_at >= datetime.utcnow() - timedelta(minutes=1)
+    ).count()
+    if recent_attempts >= 3:
+        raise HTTPException(status_code=429, detail="Too many OTP requests for this phone number. Please wait a minute.")
+
+    # Invalidate previous unexpired OTPs for this user
+    db.query(OTPAttempt).filter(OTPAttempt.user_id == current_user.id, OTPAttempt.is_used == False).update({"is_used": True})
+    
+    otp = generate_otp()
+    otp_hash = hash_otp(otp)
+    expires_at = datetime.utcnow() + timedelta(minutes=10)
+
+    otp_attempt = OTPAttempt(
+        phone_number=otp_request.phone_number,
+        otp_hash=otp_hash,
+        user_id=current_user.id,
+        expires_at=expires_at
+    )
+    db.add(otp_attempt)
+    db.commit()
+
+    # Send OTP
+    send_otp_sms(otp_request.phone_number, otp)
+
+    log_audit(db, "OTP_REQUESTED", current_user.id, request)
+
+    return {"message": "OTP sent successfully"}
+
+@router.post("/verify-otp")
+@limiter.limit("5/minute")
+def verify_otp(
+    *,
+    db: Session = Depends(get_db),
+    otp_verify: OTPVerify,
+    current_user: User = Depends(get_current_user),
+    request: Request
+) -> Any:
+    """Verify an OTP."""
+    if current_user.is_phone_verified:
+        raise HTTPException(status_code=400, detail="Phone number is already verified.")
+
+    otp_attempt = db.query(OTPAttempt).filter(
+        OTPAttempt.user_id == current_user.id,
+        OTPAttempt.phone_number == otp_verify.phone_number,
+        OTPAttempt.is_used == False
+    ).order_by(OTPAttempt.created_at.desc()).first()
+
+    if not otp_attempt:
+        log_audit(db, "OTP_VERIFY_FAILED", current_user.id, request, "No active OTP found")
+        raise HTTPException(status_code=400, detail="Invalid or expired OTP")
+    
+    if otp_attempt.expires_at < datetime.utcnow():
+        log_audit(db, "OTP_VERIFY_FAILED", current_user.id, request, "OTP expired")
+        raise HTTPException(status_code=400, detail="OTP has expired")
+
+    otp_attempt.attempts += 1
+    
+    if otp_attempt.attempts > 3:
+        otp_attempt.is_used = True
+        db.commit()
+        log_audit(db, "OTP_VERIFY_FAILED", current_user.id, request, "Max attempts exceeded")
+        raise HTTPException(status_code=400, detail="Maximum OTP attempts exceeded. Please request a new one.")
+
+    input_hash = hash_otp(otp_verify.otp)
+    if input_hash != otp_attempt.otp_hash:
+        db.commit()
+        log_audit(db, "OTP_VERIFY_FAILED", current_user.id, request, "Incorrect OTP")
+        raise HTTPException(status_code=400, detail="Incorrect OTP")
+
+    # Success
+    otp_attempt.is_used = True
+    current_user.phone_number = otp_verify.phone_number
+    current_user.is_phone_verified = True
+    db.commit()
+
+    log_audit(db, "OTP_VERIFY_SUCCESS", current_user.id, request)
+    
+    return {"message": "Phone number verified successfully"}

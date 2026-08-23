@@ -5,6 +5,8 @@ export interface User {
   id: number;
   name: string;
   email: string;
+  phone_number?: string;
+  is_phone_verified: boolean;
   role: 'CITIZEN' | 'OFFICER' | 'ADMIN';
 }
 

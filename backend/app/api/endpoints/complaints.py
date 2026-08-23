@@ -25,6 +25,40 @@ def sanitize_text(text: str) -> str:
     # Allow absolutely no HTML tags
     return bleach.clean(text, tags=[], attributes={}, strip=True)
 
+from pydantic import BaseModel
+
+class DuplicateCheckRequest(BaseModel):
+    title: str
+    category: str
+    latitude: float
+    longitude: float
+
+@router.post("/check-duplicate")
+@limiter.limit("10/minute")
+def check_duplicate(
+    *,
+    db: Session = Depends(get_db),
+    req: DuplicateCheckRequest,
+    current_user: User = Depends(get_current_user),
+    request: Request
+) -> Any:
+    """Check for potential duplicates based on category and basic proximity."""
+    # A simple geospatial bounding box query for MVP duplicate detection.
+    # ~0.005 degrees is roughly 500 meters.
+    lat_diff = 0.005
+    lon_diff = 0.005
+
+    duplicates = db.query(Complaint).filter(
+        Complaint.category == req.category,
+        Complaint.latitude >= req.latitude - lat_diff,
+        Complaint.latitude <= req.latitude + lat_diff,
+        Complaint.longitude >= req.longitude - lon_diff,
+        Complaint.longitude <= req.longitude + lon_diff,
+        Complaint.status != "RESOLVED"
+    ).limit(5).all()
+
+    return {"duplicates": duplicates}
+
 @router.post("/", response_model=ComplaintSchema)
 @limiter.limit("10/minute")
 def create_complaint(
@@ -52,6 +86,12 @@ def create_complaint(
         title=safe_title,
         description=safe_description,
         location=safe_location,
+        latitude=complaint_in.latitude,
+        longitude=complaint_in.longitude,
+        location_accuracy=complaint_in.location_accuracy,
+        location_source=complaint_in.location_source,
+        human_readable_address=sanitize_text(complaint_in.human_readable_address) if complaint_in.human_readable_address else None,
+        category=sanitize_text(complaint_in.category) if complaint_in.category else None,
         citizen_id=current_user.id,
         ai_category=ai_result.get("category"),
         ai_priority=ai_priority,
@@ -109,9 +149,30 @@ def update_complaint(
     if not complaint:
         raise HTTPException(status_code=404, detail="Complaint not found")
 
+    if current_user.role == UserRole.OFFICER and complaint.assigned_officer_id is not None and complaint.assigned_officer_id != current_user.id:
+        # Officer can only update if it's unassigned or assigned to them
+        raise HTTPException(status_code=403, detail="You are not authorized to update this complaint.")
+
     update_data = complaint_in.model_dump(exclude_unset=True)
-    if "status" in update_data and update_data["status"] == "RESOLVED":
-        complaint.resolved_at = datetime.utcnow()
+    if "status" in update_data:
+        new_status = update_data["status"]
+        if new_status != complaint.status:
+            if complaint.status in ["RESOLVED", "REJECTED"]:
+                raise HTTPException(status_code=400, detail=f"Cannot change status of a {complaint.status} complaint.")
+            
+            # Simple state machine enforcement
+            allowed_transitions = {
+                "SUBMITTED": ["UNDER_REVIEW", "ASSIGNED", "IN_PROGRESS", "REJECTED"],
+                "UNDER_REVIEW": ["ASSIGNED", "IN_PROGRESS", "REJECTED"],
+                "ASSIGNED": ["IN_PROGRESS", "REJECTED", "RESOLVED"],
+                "IN_PROGRESS": ["RESOLVED", "REJECTED"]
+            }
+            
+            if new_status not in allowed_transitions.get(complaint.status, []):
+                raise HTTPException(status_code=400, detail=f"Invalid status transition from {complaint.status} to {new_status}.")
+
+        if new_status == "RESOLVED":
+            complaint.resolved_at = datetime.utcnow()
         
     for field, value in update_data.items():
         setattr(complaint, field, value)

@@ -64,19 +64,29 @@ def test_auth_and_rbac():
     assert res.status_code == 403
 
 def test_xss_protection_api():
-    # Login as seeded citizen
-    res = client.post("/api/auth/login", data={
-        "username": "citizen@demo.local",
+    # Register user first since DB is clean per test
+    unique_email = f"xss_{uuid.uuid4()}@test.com"
+    res_reg = client.post("/api/auth/register", json={
+        "name": "Citizen",
+        "email": unique_email,
         "password": "citizen_password"
     }, headers={"X-Forwarded-For": "10.0.0.2"})
+    assert res_reg.status_code == 200, res_reg.text
+
+    # Login as citizen
+    res = client.post("/api/auth/login", data={
+        "username": unique_email,
+        "password": "citizen_password"
+    }, headers={"X-Forwarded-For": "10.0.0.2"})
+    assert res.status_code == 200, res.text
     token = res.json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
     
-    # Send XSS payload
+    # Send XSS payload with padding so it passes min_length=10 after stripping
     payloads = [
-        "<script>alert('XSS')</script>",
-        "<img src=x onerror=alert('XSS')>",
-        "<svg onload=alert('XSS')>"
+        "This is a safe text <script>alert('XSS')</script>",
+        "This is a safe text <img src=x onerror=alert('XSS')>",
+        "This is a safe text <svg onload=alert('XSS')>"
     ]
     
     for payload in payloads:

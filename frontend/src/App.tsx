@@ -9,12 +9,25 @@ import CitizenDashboard from './pages/CitizenDashboard';
 import OfficerDashboard from './pages/OfficerDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import SecurityLab from './pages/SecurityLab';
+import VerifyPhone from './pages/VerifyPhone';
+
+const RequireAuth = ({ children }: { children: JSX.Element }) => {
+  const { user, loading } = useAuth();
+  if (loading) return <div className="flex h-screen items-center justify-center">Loading...</div>;
+  if (!user) return <Navigate to="/login" />;
+  return children;
+};
 
 const ProtectedRoute = ({ children, allowedRoles }: { children: JSX.Element, allowedRoles?: string[] }) => {
   const { user, loading } = useAuth();
 
   if (loading) return <div className="flex h-screen items-center justify-center">Loading...</div>;
   if (!user) return <Navigate to="/login" />;
+  
+  if (!user.is_phone_verified) {
+    return <Navigate to="/verify-phone" />;
+  }
+
   if (allowedRoles && !allowedRoles.includes(user.role)) {
     return <Navigate to="/" />; // Redirect if not authorized
   }
@@ -38,16 +51,22 @@ function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <div className="min-h-screen flex flex-col bg-slate-50">
+        <div className="min-h-screen flex flex-col bg-premium text-slate-900">
           <Navbar />
           <main className="flex-grow pt-16">
             <Routes>
               <Route path="/" element={<Landing />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/verify-phone" element={
+                // VerifyPhone should not be wrapped in ProtectedRoute because ProtectedRoute redirects TO verify-phone.
+                // But it needs to check if the user is logged in. 
+                <RequireAuth>
+                  <VerifyPhone />
+                </RequireAuth>
+              } />
               
               <Route path="/dashboard" element={<DashboardRouter />} />
-              
               <Route path="/citizen/*" element={
                 <ProtectedRoute allowedRoles={['CITIZEN']}>
                   <CitizenDashboard />

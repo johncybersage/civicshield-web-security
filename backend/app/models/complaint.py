@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Enum as SQLEnum
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Enum as SQLEnum, Float
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 import enum
@@ -18,6 +18,11 @@ class ComplaintStatus(str, enum.Enum):
     RESOLVED = "RESOLVED"
     REJECTED = "REJECTED"
 
+class LocationSource(str, enum.Enum):
+    GPS = "GPS"
+    MANUAL_PIN = "MANUAL_PIN"
+    ADDRESS_SEARCH = "ADDRESS_SEARCH"
+
 class Complaint(Base):
     __tablename__ = "complaints"
 
@@ -35,6 +40,13 @@ class Complaint(Base):
     status = Column(SQLEnum(ComplaintStatus), default=ComplaintStatus.SUBMITTED)
     location = Column(String, nullable=True)
     
+    # Advanced Location fields
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
+    location_accuracy = Column(Float, nullable=True)
+    location_source = Column(SQLEnum(LocationSource), nullable=True)
+    human_readable_address = Column(String, nullable=True)
+    
     citizen_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     assigned_officer_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     
@@ -45,6 +57,19 @@ class Complaint(Base):
     citizen = relationship("User", foreign_keys=[citizen_id], backref="complaints_submitted")
     assigned_officer = relationship("User", foreign_keys=[assigned_officer_id], backref="complaints_assigned")
     comments = relationship("ComplaintComment", back_populates="complaint", cascade="all, delete-orphan")
+    evidence = relationship("ComplaintEvidence", back_populates="complaint", cascade="all, delete-orphan")
+
+class ComplaintEvidence(Base):
+    __tablename__ = "complaint_evidence"
+
+    id = Column(Integer, primary_key=True, index=True)
+    complaint_id = Column(Integer, ForeignKey("complaints.id"), nullable=False)
+    file_path = Column(String, nullable=False)
+    file_type = Column(String, nullable=False)
+    uploaded_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    complaint = relationship("Complaint", back_populates="evidence")
 
 class ComplaintComment(Base):
     __tablename__ = "complaint_comments"

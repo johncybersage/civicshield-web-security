@@ -6,6 +6,7 @@ from app.models.user import UserRole
 class UserBase(BaseModel):
     name: str
     email: EmailStr
+    phone_number: Optional[str] = None
 
 class UserCreate(UserBase):
     password: str
@@ -13,12 +14,14 @@ class UserCreate(UserBase):
 class UserUpdate(BaseModel):
     name: Optional[str] = None
     email: Optional[EmailStr] = None
+    phone_number: Optional[str] = None
     password: Optional[str] = None
 
 class UserInDBBase(UserBase):
     id: int
     role: UserRole
     is_active: bool
+    is_phone_verified: bool
     created_at: datetime
     updated_at: Optional[datetime] = None
 

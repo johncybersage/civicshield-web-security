@@ -13,8 +13,8 @@ from app.core.rate_limit import limiter
 from app.api.api import api_router
 from app.core.database import Base, engine
 
-# Ensure database tables are created (critical for Render deployment where alembic isn't run automatically)
-Base.metadata.create_all(bind=engine)
+# Ensure database tables are managed by Alembic in production
+# Base.metadata.create_all(bind=engine) # Removed to avoid conflicts with Alembic
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -36,15 +36,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
         content={"detail": "Internal Server Error"}
     )
 
-from sqlalchemy import text
-try:
-    with engine.begin() as conn:
-        conn.execute(text("ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS metadata_info TEXT;"))
-        conn.execute(text("ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS ip_address VARCHAR;"))
-        conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR DEFAULT 'CITIZEN';"))
-        conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE;"))
-except Exception as e:
-    print(f"Schema migration warning: {e}")
+
 
 # CORS
 app.add_middleware(
@@ -97,3 +89,23 @@ app.include_router(api_router, prefix=settings.API_V1_STR)
 @app.get("/")
 def root():
     return {"message": "Welcome to CivicShield API"}
+
+@app.get("/health", tags=["system"])
+def health_check():
+    """Liveness probe"""
+    return {"status": "ok", "service": "civicshield-backend"}
+
+from sqlalchemy.exc import OperationalError
+@app.get("/ready", tags=["system"])
+def readiness_check():
+    """Readiness probe"""
+    try:
+        # Check database connectivity
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        return {"status": "ready", "database": "connected"}
+    except Exception as e:
+        return JSONResponse(
+            status_code=503,
+            content={"status": "not_ready", "detail": "Database connection failed"}
+        )

@@ -27,6 +27,15 @@ class Settings(BaseSettings):
     # AI (Gemini)
     GEMINI_API_KEY: Optional[str] = None
     
+    # Supabase (Storage)
+    SUPABASE_URL: Optional[str] = None
+    SUPABASE_KEY: Optional[str] = None
+    
+    # Twilio (SMS)
+    TWILIO_ACCOUNT_SID: Optional[str] = None
+    TWILIO_AUTH_TOKEN: Optional[str] = None
+    TWILIO_FROM_NUMBER: Optional[str] = None
+    
     # Admin
     ADMIN_EMAIL: str = "admin@demo.local"
     ADMIN_PASSWORD: str = Field(..., description="Default admin password")

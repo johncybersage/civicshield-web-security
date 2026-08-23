@@ -1,10 +1,10 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, List
 from datetime import datetime
-from app.models.complaint import Priority, ComplaintStatus
+from app.models.complaint import Priority, ComplaintStatus, LocationSource
 
 class ComplaintCommentBase(BaseModel):
-    content: str
+    content: str = Field(..., min_length=1, max_length=1000)
 
 class ComplaintCommentCreate(ComplaintCommentBase):
     pass
@@ -18,9 +18,15 @@ class ComplaintComment(ComplaintCommentBase):
     model_config = {"from_attributes": True}
 
 class ComplaintBase(BaseModel):
-    title: str
-    description: str
+    title: str = Field(..., min_length=5, max_length=200)
+    description: str = Field(..., min_length=10, max_length=5000)
     location: Optional[str] = None
+    latitude: Optional[float] = Field(None, ge=-90, le=90)
+    longitude: Optional[float] = Field(None, ge=-180, le=180)
+    location_accuracy: Optional[float] = None
+    location_source: Optional[LocationSource] = None
+    human_readable_address: Optional[str] = None
+    category: Optional[str] = None
 
 class ComplaintCreate(ComplaintBase):
     pass

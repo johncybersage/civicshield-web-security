@@ -8,9 +8,16 @@
   }
 }
 
+/* Premium Background */
+.bg-premium {
+  background-color: #f8fafc;
+  background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
 /* Glassmorphism utilities */
 .glass-panel {
-  @apply bg-white/80 backdrop-blur-md border border-white/20 shadow-lg;
+  @apply bg-white/70 backdrop-blur-xl border border-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)];
 }
 
 .glass-panel-dark {

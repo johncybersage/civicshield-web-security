@@ -46,3 +46,24 @@ yarn-error.log*
 
 # MacOS
 .DS_Store
+
+# Uploads
+uploads/
+backend/uploads/
+
+# SQLite
+*.db
+*.sqlite3
+
+# Logs
+*.log
+
+# Scratch
+patch_*.py
+test_*.py
+!backend/tests/test_*.py
+
+# Agents
+.agents/
+skills-lock.json
+
