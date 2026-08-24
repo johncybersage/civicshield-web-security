@@ -96,6 +96,7 @@ def health_check():
     return {"status": "ok", "service": "civicshield-backend"}
 
 from sqlalchemy.exc import OperationalError
+from sqlalchemy import text
 @app.get("/ready", tags=["system"])
 def readiness_check():
     """Readiness probe"""
