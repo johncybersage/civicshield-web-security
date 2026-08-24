@@ -16,10 +16,44 @@ from app.core.database import Base, engine
 # Ensure database tables are managed by Alembic in production
 # Base.metadata.create_all(bind=engine) # Removed to avoid conflicts with Alembic
 
+from contextlib import asynccontextmanager
+from app.core.database import SessionLocal
+from app.models.user import User, UserRole
+from app.security.auth import get_password_hash
+import logging
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Seed demo account securely on startup
+    db = SessionLocal()
+    try:
+        demo_email = "demo@civicshield.local"
+        existing_demo = db.query(User).filter(User.email == demo_email).first()
+        if not existing_demo:
+            demo_user = User(
+                email=demo_email,
+                name="Demo User",
+                password_hash=get_password_hash("CivicShieldDemo@2026"),
+                role=UserRole.CITIZEN,
+                is_phone_verified=True, # Bypasses OTP requirement
+                is_active=True
+            )
+            db.add(demo_user)
+            db.commit()
+            logging.info("Demo account seeded successfully.")
+        else:
+            logging.info("Demo account already exists.")
+    except Exception as e:
+        logging.error(f"Error seeding demo account: {e}")
+    finally:
+        db.close()
+    yield
+
 app = FastAPI(
     title=settings.PROJECT_NAME,
     openapi_url="/openapi.json",
-    redoc_url=None
+    redoc_url=None,
+    lifespan=lifespan
 )
 
 app.state.limiter = limiter

@@ -111,6 +111,33 @@ const Login = () => {
               {loading ? 'Signing in...' : 'Sign in'}
             </button>
           </div>
+          
+          <div className="mt-4">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-slate-300"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-slate-50 text-slate-500">Demo account available</span>
+              </div>
+            </div>
+
+            <div className="mt-4 text-center">
+              <button
+                type="button"
+                onClick={() => {
+                  setEmail('demo@civicshield.local');
+                  setPassword('CivicShieldDemo@2026');
+                }}
+                className="inline-flex justify-center items-center px-4 py-2 border border-slate-300 shadow-sm text-sm font-medium rounded-md text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
+              >
+                Use Demo Access
+              </button>
+              <p className="mt-2 text-xs text-slate-500">
+                Fills credentials. Click Sign in to test authentication.
+              </p>
+            </div>
+          </div>
         </form>
       </div>
     </div>
