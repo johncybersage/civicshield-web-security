@@ -31,7 +31,8 @@ class Settings(BaseSettings):
     SUPABASE_URL: Optional[str] = None
     SUPABASE_KEY: Optional[str] = None
     
-    # Twilio (SMS)
+    # Twilio (SMS) & OTP
+    OTP_PROVIDER: str = "development" # 'development' or 'twilio'
     TWILIO_ACCOUNT_SID: Optional[str] = None
     TWILIO_AUTH_TOKEN: Optional[str] = None
     TWILIO_FROM_NUMBER: Optional[str] = None

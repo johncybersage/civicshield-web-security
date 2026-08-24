@@ -21,7 +21,15 @@ def send_otp_sms(phone_number: str, otp: str):
     """
     Send SMS OTP using Twilio, fallback to mock if credentials are not configured.
     """
-    if settings.TWILIO_ACCOUNT_SID and settings.TWILIO_AUTH_TOKEN and settings.TWILIO_FROM_NUMBER:
+    if settings.OTP_PROVIDER == "development":
+        print(f"[DEV OTP] Phone: {phone_number} | OTP: {otp}")
+        return
+
+    if settings.OTP_PROVIDER == "twilio":
+        if not (settings.TWILIO_ACCOUNT_SID and settings.TWILIO_AUTH_TOKEN and settings.TWILIO_FROM_NUMBER):
+            from fastapi import HTTPException
+            raise HTTPException(status_code=500, detail="Twilio credentials must be configured for OTP_PROVIDER=twilio")
+        
         try:
             from twilio.rest import Client
             client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
@@ -33,11 +41,9 @@ def send_otp_sms(phone_number: str, otp: str):
             print(f"Twilio SMS sent with SID: {message.sid}")
             return
         except Exception as e:
-            print(f"Twilio Error: {e}. Falling back to mock SMS.")
-
-    # DEVELOPMENT MOCK
-    print(f"==================================================")
-    print(f"MOCK SMS PROVIDER")
-    print(f"To: {phone_number}")
-    print(f"Message: Your CivicShield verification code is: {otp}. It expires in 10 minutes.")
-    print(f"==================================================")
+            print(f"Twilio Error: {e}")
+            from fastapi import HTTPException
+            raise HTTPException(status_code=500, detail="Failed to send SMS via Twilio.")
+            
+    from fastapi import HTTPException
+    raise HTTPException(status_code=500, detail=f"Invalid OTP_PROVIDER: {settings.OTP_PROVIDER}")
