@@ -67,3 +67,5 @@ test_*.py
 .agents/
 skills-lock.json
 
+.vercel
+.env*
