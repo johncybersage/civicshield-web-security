@@ -245,7 +245,7 @@ const ComplaintDetail = () => {
           </div>
 
           <div className="p-6 sm:p-8 bg-slate-50/50">
-            {complaint.phone_number && isOfficer && (
+            {complaint.phone_number && (
               <div className="mb-8">
                 <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 border-b border-slate-200 pb-2">Contact Info</h3>
                 <div className="flex items-center gap-3 bg-white p-3 rounded-xl border border-slate-200 shadow-sm">

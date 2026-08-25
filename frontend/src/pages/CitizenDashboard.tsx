@@ -62,10 +62,10 @@ const CitizenList = () => {
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {complaints.map(complaint => (
-            <div 
+            <Link 
+              to={`/complaints/${complaint.tracking_id || complaint.id}`}
               key={complaint.id} 
-              onClick={() => navigate(`/complaints/${complaint.tracking_id || complaint.id}`)}
-              className="glass-panel p-6 rounded-2xl hover-lift transition-all cursor-pointer group flex flex-col"
+              className="glass-panel p-6 rounded-2xl hover-lift transition-all cursor-pointer group flex flex-col block no-underline"
             >
               <div className="flex justify-between items-start mb-4">
                 <h3 className="font-bold text-lg text-slate-900 line-clamp-1 group-hover:text-primary-600 transition-colors">{complaint.title}</h3>
@@ -96,7 +96,7 @@ const CitizenList = () => {
                   </div>
                 </div>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       )}
