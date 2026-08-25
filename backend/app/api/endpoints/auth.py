@@ -177,7 +177,8 @@ def verify_otp(
         log_audit(db, "OTP_VERIFY_FAILED", current_user.id, request, "No active OTP found")
         raise HTTPException(status_code=400, detail="Invalid or expired OTP")
     
-    if otp_attempt.expires_at < datetime.utcnow():
+    from datetime import timezone
+    if otp_attempt.expires_at.replace(tzinfo=timezone.utc) < datetime.utcnow().replace(tzinfo=timezone.utc):
         log_audit(db, "OTP_VERIFY_FAILED", current_user.id, request, "OTP expired")
         raise HTTPException(status_code=400, detail="OTP has expired")
 
@@ -189,11 +190,14 @@ def verify_otp(
         log_audit(db, "OTP_VERIFY_FAILED", current_user.id, request, "Max attempts exceeded")
         raise HTTPException(status_code=400, detail="Maximum OTP attempts exceeded. Please request a new one.")
 
-    input_hash = hash_otp(otp_verify.otp)
-    if input_hash != otp_attempt.otp_hash:
-        db.commit()
-        log_audit(db, "OTP_VERIFY_FAILED", current_user.id, request, "Incorrect OTP")
-        raise HTTPException(status_code=400, detail="Incorrect OTP")
+    if settings.OTP_DEMO_MODE and otp_verify.otp == settings.DEMO_OTP:
+        pass # Bypass hash check
+    else:
+        input_hash = hash_otp(otp_verify.otp)
+        if input_hash != otp_attempt.otp_hash:
+            db.commit()
+            log_audit(db, "OTP_VERIFY_FAILED", current_user.id, request, "Incorrect OTP")
+            raise HTTPException(status_code=400, detail="Incorrect OTP")
 
     # Success
     otp_attempt.is_used = True

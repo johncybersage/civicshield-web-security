@@ -87,6 +87,15 @@ const VerifyPhone = () => {
           </div>
         )}
 
+        {import.meta.env.VITE_OTP_DEMO_MODE === 'true' && step === 'VERIFY' && (
+          <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mt-4 flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 text-blue-500" />
+            <p className="text-sm text-blue-700">
+              <strong>Evaluation Mode:</strong> For project evaluation, use demo OTP <strong>123456</strong>.
+            </p>
+          </div>
+        )}
+
         {step === 'REQUEST' ? (
           <form className="mt-8 space-y-6" onSubmit={handleRequestOTP}>
             <div>

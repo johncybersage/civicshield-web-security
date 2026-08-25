@@ -51,6 +51,10 @@ class Settings(BaseSettings):
     TWILIO_AUTH_TOKEN: Optional[str] = None
     TWILIO_FROM_NUMBER: Optional[str] = None
     
+    # Demo OTP Mode
+    OTP_DEMO_MODE: bool = False
+    DEMO_OTP: str = "123456"
+    
     # Admin
     ADMIN_EMAIL: str = "admin@demo.local"
     ADMIN_PASSWORD: str = Field(..., description="Default admin password")

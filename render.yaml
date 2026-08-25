@@ -14,3 +14,7 @@ services:
         sync: false
       - key: FRONTEND_URL
         sync: false
+      - key: OTP_DEMO_MODE
+        value: "true"
+      - key: DEMO_OTP
+        value: "123456"
