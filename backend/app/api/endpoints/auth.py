@@ -111,6 +111,15 @@ def read_users_me(
 ) -> Any:
     return current_user
 
+from pydantic import ValidationError
+@router.get("/me/debug")
+def debug_users_me(current_user: User = Depends(get_current_user)):
+    try:
+        UserSchema.model_validate(current_user)
+        return {"status": "success"}
+    except ValidationError as e:
+        return {"errors": e.errors()}
+
 @router.post("/request-otp")
 @limiter.limit("3/minute")
 def request_otp(
