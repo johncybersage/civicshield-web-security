@@ -4,7 +4,7 @@ import api from '../utils/api';
 import { useAuth } from '../hooks/useAuth';
 import ComplaintTimeline, { formatStatus, getStatusIcon } from '../components/ComplaintTimeline';
 import { format } from 'date-fns';
-import { MapPin, ArrowLeft, AlertTriangle, MessageSquare, Save, Loader2, Phone } from 'lucide-react';
+import { MapPin, ArrowLeft, AlertTriangle, MessageSquare, Save, Loader2, Phone, Clock } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -40,24 +40,7 @@ const ComplaintDetail = () => {
 
   const fetchComplaint = async () => {
     try {
-      // For officers/admins, we might need a different endpoint if trackingId is an ID, but 
-      // the new schema allows trackingId. We should check if trackingId is a number (old ID) or string.
-      const isNumeric = /^\d+$/.test(trackingId || '');
       let url = `/complaints/${trackingId}`;
-      
-      // If it's a string, we might have to use public track endpoint to get the ID, 
-      // or we should update the backend to allow tracking_id in the GET /id endpoint.
-      // Wait, the backend GET /{id} expects an integer ID. 
-      // Let's use the public endpoint if we are a citizen, but public endpoint hides details!
-      // I should update the backend to allow querying by tracking_id, or I'll just rely on the API for now.
-      
-      // For now, let's fetch from the public endpoint to get the internal ID, then fetch full details.
-      if (!isNumeric) {
-        const publicRes = await api.get(`/complaints/track/${trackingId}`);
-        url = `/complaints/${publicRes.data.id || publicRes.data.tracking_id}`; 
-        // Wait, public doesn't return id. I will need to update the backend GET /{id} to support tracking_id string.
-        // Let's just pass trackingId and see. If it fails, we know we need backend fix.
-      }
       
       const res = await api.get(url);
       setComplaint(res.data);
