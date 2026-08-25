@@ -1,10 +1,26 @@
 import pytest
 from fastapi.testclient import TestClient
 from app.main import app
+import uuid
 
 client = TestClient(app)
 
-def test_complaint_lifecycle(db_session, test_user_token):
+def test_complaint_lifecycle(db_session, client):
+    # 0. Register and login to get token
+    unique_email = f"test_{uuid.uuid4()}@test.com"
+    res = client.post("/api/auth/register", json={
+        "name": "Test Citizen",
+        "email": unique_email,
+        "password": "password123"
+    }, headers={"X-Forwarded-For": "10.0.0.1"})
+    
+    # login to get token
+    res = client.post("/api/auth/login", data={
+        "username": unique_email,
+        "password": "password123"
+    })
+    test_user_token = res.json()["access_token"]
+
     # 1. Create a complaint
     headers = {"Authorization": f"Bearer {test_user_token}"}
     complaint_data = {

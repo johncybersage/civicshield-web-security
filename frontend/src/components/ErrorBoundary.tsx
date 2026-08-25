@@ -27,15 +27,15 @@ class ErrorBoundary extends Component<Props, State> {
   public render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-          <div className="bg-white max-w-3xl w-full rounded-2xl shadow-sm border border-slate-200 p-8 text-left overflow-hidden flex flex-col max-h-[90vh]">
+        <div className="min-h-screen bg-slate-50 dark:bg-dark-bg flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-800 max-w-3xl w-full rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-8 text-left overflow-hidden flex flex-col max-h-[90vh]">
             <div className="flex items-center gap-4 mb-6">
-              <div className="w-12 h-12 bg-rose-100 text-rose-500 rounded-full flex items-center justify-center shrink-0">
+              <div className="w-12 h-12 bg-rose-100 dark:bg-rose-900/30 text-rose-500 rounded-full flex items-center justify-center shrink-0">
                 <AlertTriangle className="w-6 h-6" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-slate-900">Something went wrong</h1>
-                <p className="text-slate-600">The application encountered an unexpected runtime error.</p>
+                <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Something went wrong</h1>
+                <p className="text-slate-600 dark:text-slate-400">The application encountered an unexpected runtime error.</p>
               </div>
             </div>
             
@@ -63,7 +63,7 @@ class ErrorBoundary extends Component<Props, State> {
               </button>
               <button
                 onClick={() => window.location.reload()}
-                className="flex-1 bg-white text-slate-700 font-medium py-3 rounded-xl border border-slate-200 hover:bg-slate-50 transition-colors"
+                className="flex-1 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium py-3 rounded-xl border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors"
               >
                 Reload Page
               </button>

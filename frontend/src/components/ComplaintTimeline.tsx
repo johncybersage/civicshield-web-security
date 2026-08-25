@@ -1,5 +1,5 @@
 import React from 'react';
-import { format } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import { CheckCircle2, Clock, MapPin, AlertCircle, PlayCircle, XCircle, User } from 'lucide-react';
 
 interface TimelineEvent {
@@ -37,9 +37,27 @@ export const formatStatus = (status: string) => {
   return String(status).replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
 };
 
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'SUBMITTED': return 'border-blue-500 bg-blue-500';
+    case 'UNDER_REVIEW': return 'border-amber-500 bg-amber-500';
+    case 'ASSIGNED': return 'border-indigo-500 bg-indigo-500';
+    case 'IN_PROGRESS': return 'border-purple-500 bg-purple-500';
+    case 'RESOLVED': return 'border-emerald-500 bg-emerald-500';
+    case 'REJECTED': return 'border-rose-500 bg-rose-500';
+    default: return 'border-slate-400 bg-slate-400';
+  }
+};
+
 const ComplaintTimeline: React.FC<TimelineProps> = ({ history }) => {
   if (!history || history.length === 0) {
-    return <div className="text-slate-500 italic py-4">No timeline history available.</div>;
+    return (
+      <div className="flex flex-col items-center justify-center py-8 text-center">
+        <Clock className="w-8 h-8 text-slate-300 dark:text-slate-600 mb-3" />
+        <p className="text-sm text-slate-500 dark:text-slate-400">No timeline history available</p>
+        <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Updates will appear here as the complaint progresses</p>
+      </div>
+    );
   }
 
   // Ensure chronological order (oldest first)
@@ -55,45 +73,77 @@ const ComplaintTimeline: React.FC<TimelineProps> = ({ history }) => {
   }
 
   return (
-    <div className="relative border-l-2 border-slate-200 ml-3 py-2 space-y-8">
+    <div className="relative ml-1 py-2 space-y-0">
       {/* Processed (History) Events */}
       {sortedHistory.map((event, index) => {
         const isCurrent = index === sortedHistory.length - 1;
+        const statusColor = getStatusColor(event.new_status);
+        const timeAgo = event.created_at && !isNaN(new Date(event.created_at).getTime())
+          ? formatDistanceToNow(new Date(event.created_at), { addSuffix: true })
+          : '';
+        const exactTime = event.created_at && !isNaN(new Date(event.created_at).getTime())
+          ? format(new Date(event.created_at), 'dd MMM yyyy, h:mm a')
+          : 'Unknown Date';
+
         return (
-          <div key={event.id} className="relative pl-6">
-            <span className={`absolute -left-[13px] top-1 bg-white rounded-full p-0.5 border ${isCurrent ? 'border-primary-500 shadow-md' : 'border-slate-200 shadow-sm'}`}>
-              {getStatusIcon(event.new_status)}
-            </span>
-            <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between mb-1">
-              <h3 className={`font-semibold ${isCurrent ? 'text-slate-900' : 'text-slate-700'}`}>
-                {formatStatus(event.new_status)}
-              </h3>
-              <time className="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-1 rounded-md mt-1 sm:mt-0">
-                {event.created_at && !isNaN(new Date(event.created_at).getTime()) ? format(new Date(event.created_at), 'dd MMM yyyy, h:mm a') : 'Unknown Date'}
-              </time>
-            </div>
-            {event.note && (
-              <p className="text-sm text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-100 mt-2">
-                {event.note}
-              </p>
+          <div key={event.id} className="relative pl-8 pb-8 last:pb-0 group">
+            {/* Connector line */}
+            {(index < sortedHistory.length - 1 || futureSteps.length > 0) && (
+              <div className="absolute left-[11px] top-8 w-0.5 h-full bg-slate-200 dark:bg-slate-700" />
             )}
+            
+            {/* Step indicator */}
+            <div className={`absolute left-0 top-1 w-6 h-6 rounded-full flex items-center justify-center border-2 ${
+              isCurrent 
+                ? `${statusColor} shadow-md ring-4 ring-opacity-20 ${statusColor.includes('blue') ? 'ring-blue-500' : statusColor.includes('amber') ? 'ring-amber-500' : statusColor.includes('indigo') ? 'ring-indigo-500' : statusColor.includes('purple') ? 'ring-purple-500' : statusColor.includes('emerald') ? 'ring-emerald-500' : statusColor.includes('rose') ? 'ring-rose-500' : 'ring-slate-500'}`
+                : `${statusColor}`
+            }`}>
+              <CheckCircle2 className="w-3.5 h-3.5 text-white" />
+            </div>
+
+            {/* Content */}
+            <div className={`${isCurrent ? 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 shadow-sm' : ''}`}>
+              <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1">
+                <h3 className={`font-semibold text-sm ${isCurrent ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300'}`}>
+                  {formatStatus(event.new_status)}
+                </h3>
+                <time 
+                  className="text-xs text-slate-500 dark:text-slate-400" 
+                  title={exactTime}
+                >
+                  {timeAgo || exactTime}
+                </time>
+              </div>
+              {event.note && (
+                <p className="text-sm text-slate-600 dark:text-slate-400 mt-2 bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg border border-slate-100 dark:border-slate-600">
+                  {event.note}
+                </p>
+              )}
+            </div>
           </div>
         );
       })}
 
       {/* Pending (Future) Events */}
       {futureSteps.map((status, index) => (
-        <div key={`future-${status}`} className="relative pl-6 opacity-40 grayscale">
-          <span className="absolute -left-[13px] top-1 bg-white rounded-full p-0.5 border border-slate-200 shadow-sm">
-            {getStatusIcon(status)}
-          </span>
-          <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between mb-1">
-            <h3 className="font-semibold text-slate-500">
-              {formatStatus(status)}
-            </h3>
-            <span className="text-xs font-medium text-slate-400 bg-slate-100 px-2 py-1 rounded-md mt-1 sm:mt-0 uppercase tracking-wider">
-              Pending
-            </span>
+        <div key={`future-${status}`} className="relative pl-8 pb-8 last:pb-0">
+          {/* Connector line */}
+          {index < futureSteps.length - 1 && (
+            <div className="absolute left-[11px] top-8 w-0.5 h-full bg-slate-200 dark:bg-slate-700 opacity-40" />
+          )}
+          
+          {/* Empty step indicator */}
+          <div className="absolute left-0 top-1 w-6 h-6 rounded-full border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 opacity-50" />
+
+          <div className="opacity-40">
+            <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1">
+              <h3 className="font-semibold text-sm text-slate-500 dark:text-slate-500">
+                {formatStatus(status)}
+              </h3>
+              <span className="text-xs font-medium text-slate-400 dark:text-slate-600 uppercase tracking-wider">
+                Pending
+              </span>
+            </div>
           </div>
         </div>
       ))}

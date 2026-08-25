@@ -59,38 +59,38 @@ const VerifyPhone = () => {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center bg-slate-50 dark:bg-dark-bg py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8 glass-panel p-8 rounded-2xl animate-fade-in">
         <div className="text-center">
-          <div className="mx-auto h-12 w-12 bg-primary-100 flex items-center justify-center rounded-full">
-            <Phone className="h-8 w-8 text-primary-600" />
+          <div className="mx-auto h-12 w-12 bg-primary-100 dark:bg-primary-900/40 flex items-center justify-center rounded-full">
+            <Phone className="h-8 w-8 text-primary-600 dark:text-primary-400" />
           </div>
-          <h2 className="mt-6 text-3xl font-extrabold text-slate-900">
+          <h2 className="mt-6 text-3xl font-extrabold text-slate-900 dark:text-white">
             Verify Phone Number
           </h2>
-          <p className="mt-2 text-sm text-slate-600">
+          <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
             For security and accountability, we require a verified phone number before you can report incidents.
           </p>
         </div>
 
         {error && (
-          <div className="bg-red-50 border-l-4 border-red-500 p-4 flex items-center gap-3">
+          <div className="bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 p-4 flex items-center gap-3">
             <AlertCircle className="h-5 w-5 text-red-500" />
-            <p className="text-sm text-red-700">{error}</p>
+            <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
           </div>
         )}
 
         {success && step === 'VERIFY' && (
-          <div className="bg-green-50 border-l-4 border-green-500 p-4 flex items-center gap-3">
+          <div className="bg-green-50 dark:bg-green-900/30 border-l-4 border-green-500 p-4 flex items-center gap-3">
             <CheckCircle className="h-5 w-5 text-green-500" />
-            <p className="text-sm text-green-700">{success}</p>
+            <p className="text-sm text-green-700 dark:text-green-300">{success}</p>
           </div>
         )}
 
         {import.meta.env.VITE_OTP_DEMO_MODE === 'true' && step === 'VERIFY' && (
-          <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mt-4 flex items-center gap-3">
+          <div className="bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-500 p-4 mt-4 flex items-center gap-3">
             <AlertCircle className="h-5 w-5 text-blue-500" />
-            <p className="text-sm text-blue-700">
+            <p className="text-sm text-blue-700 dark:text-blue-300">
               <strong>Evaluation Mode:</strong> For project evaluation, use demo OTP <strong>123456</strong>.
             </p>
           </div>
@@ -105,7 +105,7 @@ const VerifyPhone = () => {
                 name="phone"
                 type="tel"
                 required
-                className="appearance-none rounded-lg relative block w-full px-3 py-3 border border-slate-300 placeholder-slate-500 text-slate-900 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                className="appearance-none rounded-lg relative block w-full px-3 py-3 border border-slate-300 dark:border-slate-600 placeholder-slate-500 text-slate-900 dark:text-white dark:bg-slate-800/50 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
                 placeholder="Phone Number (e.g. +1234567890)"
                 value={phoneNumber}
                 onChange={(e) => setPhoneNumber(e.target.value)}
@@ -128,7 +128,7 @@ const VerifyPhone = () => {
                 name="otp"
                 type="text"
                 required
-                className="appearance-none rounded-lg relative block w-full px-3 py-3 border border-slate-300 placeholder-slate-500 text-slate-900 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm text-center text-2xl tracking-widest"
+                className="appearance-none rounded-lg relative block w-full px-3 py-3 border border-slate-300 dark:border-slate-600 placeholder-slate-500 text-slate-900 dark:text-white dark:bg-slate-800/50 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm text-center text-2xl tracking-widest"
                 placeholder="000000"
                 value={otp}
                 onChange={(e) => setOtp(e.target.value)}

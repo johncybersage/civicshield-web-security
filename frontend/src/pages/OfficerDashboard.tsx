@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
-import { ClipboardList, CheckCircle } from 'lucide-react';
+import { ClipboardList, CheckCircle, Clock, AlertTriangle, FileText, TrendingUp } from 'lucide-react';
+import StatCard from '../components/StatCard';
+import { StatCardSkeleton } from '../components/SkeletonLoader';
 
 interface Complaint {
   id: number;
@@ -14,6 +16,18 @@ interface Complaint {
   final_priority: string;
   created_at: string;
 }
+
+const getStatusBadge = (status: string) => {
+  const styles: Record<string, string> = {
+    SUBMITTED: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
+    UNDER_REVIEW: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
+    ASSIGNED: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300',
+    IN_PROGRESS: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300',
+    RESOLVED: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
+    REJECTED: 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300',
+  };
+  return styles[status] || 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300';
+};
 
 const OfficerDashboard = () => {
   const [complaints, setComplaints] = useState<Complaint[]>([]);
@@ -44,56 +58,77 @@ const OfficerDashboard = () => {
     }
   };
 
+  const totalCount = complaints.length;
+  const openCount = complaints.filter(c => c.status !== 'RESOLVED' && c.status !== 'REJECTED').length;
+  const resolvedCount = complaints.filter(c => c.status === 'RESOLVED').length;
+  const highPriorityCount = complaints.filter(c => {
+    const p = (c.final_priority || c.ai_priority || '').toUpperCase();
+    return p === 'HIGH' || p === 'CRITICAL';
+  }).length;
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="mb-8 flex items-center justify-between border-b border-slate-200 pb-5">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animation-fade-in">
+      <div className="mb-8 flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-5">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Officer Dashboard</h1>
-          <p className="mt-2 text-sm text-slate-500">Manage and resolve community incidents.</p>
+          <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Officer Dashboard</h1>
+          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Manage and resolve community incidents.</p>
         </div>
-        <div className="bg-primary-100 rounded-full p-3">
-          <ClipboardList className="h-6 w-6 text-primary-600" />
+        <div className="bg-primary-100 dark:bg-primary-900/40 rounded-full p-3">
+          <ClipboardList className="h-6 w-6 text-primary-600 dark:text-primary-400" />
         </div>
       </div>
 
+      {/* Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {loading ? (
+          Array(4).fill(0).map((_, i) => <StatCardSkeleton key={i} />)
+        ) : (
+          <>
+            <StatCard icon={FileText} title="Total" value={totalCount} description="All complaints" iconColor="text-primary-600" iconBg="bg-primary-50" />
+            <StatCard icon={Clock} title="Open" value={openCount} description="Needs attention" iconColor="text-amber-600" iconBg="bg-amber-50" />
+            <StatCard icon={CheckCircle} title="Resolved" value={resolvedCount} description="Successfully closed" iconColor="text-emerald-600" iconBg="bg-emerald-50" />
+            <StatCard icon={AlertTriangle} title="High Priority" value={highPriorityCount} description="Urgent cases" iconColor="text-rose-600" iconBg="bg-rose-50" />
+          </>
+        )}
+      </div>
+
       {loading ? (
-        <div className="text-center py-12">Loading...</div>
+        <div className="text-center py-12 text-slate-500 dark:text-slate-400">Loading...</div>
       ) : (
-        <div className="bg-white shadow overflow-hidden sm:rounded-md border border-slate-200">
-          <ul className="divide-y divide-slate-200">
+        <div className="bg-white dark:bg-slate-800 shadow-sm overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700">
+          <ul className="divide-y divide-slate-200 dark:divide-slate-700">
             {complaints.map((complaint) => (
               <li 
                 key={complaint.id} 
                 onClick={() => navigate(`/complaints/${complaint.tracking_id || complaint.id}`)}
                 className="cursor-pointer group"
               >
-                <div className="px-4 py-4 sm:px-6 group-hover:bg-slate-50 transition-colors">
+                <div className="px-4 py-4 sm:px-6 group-hover:bg-slate-50 dark:group-hover:bg-slate-700/50 transition-colors">
                   <div className="flex items-center justify-between">
-                    <p className="text-sm font-bold text-primary-600 truncate group-hover:text-primary-700">{complaint.title}</p>
+                    <p className="text-sm font-bold text-primary-600 dark:text-primary-400 truncate group-hover:text-primary-700 dark:group-hover:text-primary-300">{complaint.title}</p>
                     <div className="ml-2 flex-shrink-0 flex">
-                      <p className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                        ${complaint.status === 'RESOLVED' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                        {complaint.status}
+                      <p className={`px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadge(complaint.status)}`}>
+                        {(complaint.status || '').replace(/_/g, ' ')}
                       </p>
                     </div>
                   </div>
                   <div className="mt-2 sm:flex sm:justify-between">
                     <div className="sm:flex">
-                      <p className="flex items-center text-sm text-slate-500">
+                      <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-1">
                         {complaint.description}
                       </p>
                     </div>
-                    <div className="mt-2 flex items-center text-sm text-slate-500 sm:mt-0 gap-4">
+                    <div className="mt-2 flex items-center text-sm text-slate-500 dark:text-slate-400 sm:mt-0 gap-4">
                       {complaint.ai_priority && (
-                         <span className="text-purple-600 font-medium text-xs border border-purple-200 bg-purple-50 px-2 py-1 rounded">
-                           AI Priority: {complaint.ai_priority}
+                         <span className="text-purple-600 dark:text-purple-400 font-medium text-xs border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-900/30 px-2 py-1 rounded">
+                           AI: {complaint.ai_priority}
                          </span>
                       )}
                       
                       {complaint.status !== 'RESOLVED' && (
                         <div onClick={(e) => e.stopPropagation()}>
                           <select 
-                            className="text-xs border-slate-300 rounded focus:ring-primary-500 focus:border-primary-500"
+                            className="text-xs border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded focus:ring-primary-500 focus:border-primary-500"
                             value={complaint.status}
                             onChange={(e) => updateStatus(complaint.id, e.target.value)}
                           >
@@ -107,7 +142,7 @@ const OfficerDashboard = () => {
                       {complaint.status === 'RESOLVED' && (
                         <CheckCircle className="text-green-500 h-5 w-5" />
                       )}
-                      <div className="ml-2 text-sm text-primary-600 group-hover:text-primary-800 font-medium">
+                      <div className="ml-2 text-sm text-primary-600 dark:text-primary-400 group-hover:text-primary-800 dark:group-hover:text-primary-300 font-medium">
                         View Details &rarr;
                       </div>
                     </div>

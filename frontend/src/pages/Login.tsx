@@ -46,16 +46,16 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center bg-slate-50 dark:bg-dark-bg py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8 glass-panel p-8 rounded-2xl animate-fade-in">
         <div>
-          <div className="mx-auto h-12 w-12 bg-primary-100 flex items-center justify-center rounded-full">
-            <Shield className="h-8 w-8 text-primary-600" />
+          <div className="mx-auto h-12 w-12 bg-primary-100 dark:bg-primary-900/40 flex items-center justify-center rounded-full">
+            <Shield className="h-8 w-8 text-primary-600 dark:text-primary-400" />
           </div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-slate-900">
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-slate-900 dark:text-white">
             Sign in to CivicShield
           </h2>
-          <p className="mt-2 text-center text-sm text-slate-600">
+          <p className="mt-2 text-center text-sm text-slate-600 dark:text-slate-400">
             Or{' '}
             <Link to="/register" className="font-medium text-primary-600 hover:text-primary-500 transition-colors">
               create a new account
@@ -64,8 +64,8 @@ const Login = () => {
         </div>
         
         {error && (
-          <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-md animate-slide-up">
-            <p className="text-sm text-red-700">{error}</p>
+          <div className="bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 p-4 rounded-md animate-slide-up">
+            <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
           </div>
         )}
 
@@ -80,7 +80,7 @@ const Login = () => {
                 name="email"
                 type="email"
                 required
-                className="appearance-none rounded-lg relative block w-full pl-10 px-3 py-3 border border-slate-300 placeholder-slate-500 text-slate-900 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm transition-shadow"
+                className="appearance-none rounded-lg relative block w-full pl-10 px-3 py-3 border border-slate-300 dark:border-slate-600 placeholder-slate-500 text-slate-900 dark:text-white dark:bg-slate-800/50 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm transition-shadow"
                 placeholder="Email address"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -95,7 +95,7 @@ const Login = () => {
                 name="password"
                 type={showPassword ? "text" : "password"}
                 required
-                className="appearance-none rounded-lg relative block w-full pl-10 pr-10 px-3 py-3 border border-slate-300 placeholder-slate-500 text-slate-900 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm transition-shadow"
+                className="appearance-none rounded-lg relative block w-full pl-10 pr-10 px-3 py-3 border border-slate-300 dark:border-slate-600 placeholder-slate-500 text-slate-900 dark:text-white dark:bg-slate-800/50 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm transition-shadow"
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
