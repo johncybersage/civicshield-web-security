@@ -59,7 +59,7 @@ class Settings(BaseSettings):
     @classmethod
     def parse_demo_mode(cls, v: Any) -> bool:
         if isinstance(v, str):
-            return v.strip().lower() in ("true", "1", "t", "y", "yes", "on")
+            return v.strip().strip("'\"").lower() in ("true", "1", "t", "y", "yes", "on")
         return bool(v)
     
     # Admin
