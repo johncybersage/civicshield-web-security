@@ -12,54 +12,70 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 def seed_demo_user():
     db = SessionLocal()
     try:
-        demo_email = "demo@civicshield.local"
-        demo_password_plain = "CivicShieldDemo@2026"
-        existing_demo = db.query(User).filter(User.email == demo_email).first()
-        
-        if not existing_demo:
-            # Create user if missing
-            demo_user = User(
-                email=demo_email,
-                name="Demo User",
-                password_hash=get_password_hash(demo_password_plain),
-                role=UserRole.CITIZEN,
-                is_phone_verified=True,
-                is_active=True
-            )
-            db.add(demo_user)
-            db.commit()
-            logging.info("Demo account ready.")
-        else:
-            # Idempotent robust check
-            needs_commit = False
+        users_to_seed = [
+            {
+                "email": "demo@civicshield.local",
+                "name": "Demo User",
+                "password_plain": "CivicShieldDemo@2026",
+                "role": UserRole.CITIZEN
+            },
+            {
+                "email": "officer@demo.local",
+                "name": "Officer Jane",
+                "password_plain": "officer_password",
+                "role": UserRole.OFFICER
+            },
+            {
+                "email": "admin@demo.local",
+                "name": "Admin User",
+                "password_plain": "admin_password",
+                "role": UserRole.ADMIN
+            }
+        ]
+
+        for user_data in users_to_seed:
+            existing_user = db.query(User).filter(User.email == user_data["email"]).first()
             
-            if not existing_demo.is_active or not existing_demo.is_phone_verified:
-                existing_demo.is_active = True
-                existing_demo.is_phone_verified = True
-                needs_commit = True
-                
-            # Verify and conditionally rehash password
-            try:
-                if not verify_password(demo_password_plain, existing_demo.password_hash):
-                    existing_demo.password_hash = get_password_hash(demo_password_plain)
-                    needs_commit = True
-            except Exception:
-                # Catch any issues with verify_password (e.g. unknown hash algorithm from old data)
-                existing_demo.password_hash = get_password_hash(demo_password_plain)
-                needs_commit = True
-                
-            if needs_commit:
+            if not existing_user:
+                new_user = User(
+                    email=user_data["email"],
+                    name=user_data["name"],
+                    password_hash=get_password_hash(user_data["password_plain"]),
+                    role=user_data["role"],
+                    is_phone_verified=True,
+                    is_active=True
+                )
+                db.add(new_user)
                 db.commit()
+                logging.info(f"Seeded account: {user_data['email']}")
+            else:
+                needs_commit = False
                 
-            logging.info("Demo account ready.")
-            
+                if not existing_user.is_active or not existing_user.is_phone_verified:
+                    existing_user.is_active = True
+                    existing_user.is_phone_verified = True
+                    needs_commit = True
+                    
+                try:
+                    if not verify_password(user_data["password_plain"], existing_user.password_hash):
+                        existing_user.password_hash = get_password_hash(user_data["password_plain"])
+                        needs_commit = True
+                except Exception:
+                    existing_user.password_hash = get_password_hash(user_data["password_plain"])
+                    needs_commit = True
+                    
+                if needs_commit:
+                    db.commit()
+                    
+                logging.info(f"Verified/updated account: {user_data['email']}")
+                
     except SQLAlchemyError as e:
         db.rollback()
-        logging.error("Database error while seeding demo account.")
+        logging.error("Database error while seeding accounts.")
         sys.exit(1)
     except Exception as e:
         db.rollback()
-        logging.error("Unknown error while seeding demo account.")
+        logging.error("Unknown error while seeding accounts.")
         sys.exit(1)
     finally:
         db.close()
