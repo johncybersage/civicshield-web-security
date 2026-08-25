@@ -15,6 +15,8 @@ import TrackComplaint from './pages/TrackComplaint';
 import MyComplaints from './pages/MyComplaints';
 import ComplaintDetail from './pages/ComplaintDetail';
 
+import ErrorBoundary from './components/ErrorBoundary';
+
 const RequireAuth = ({ children }: { children: JSX.Element }) => {
   const { user, loading } = useAuth();
   if (loading) return <div className="flex h-screen items-center justify-center">Loading...</div>;
@@ -58,55 +60,57 @@ function App() {
         <div className="min-h-screen flex flex-col bg-premium text-slate-900">
           <Navbar />
           <main className="flex-grow pt-16">
-            <Routes>
-              <Route path="/" element={<Landing />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/verify-phone" element={
-                // VerifyPhone should not be wrapped in ProtectedRoute because ProtectedRoute redirects TO verify-phone.
-                // But it needs to check if the user is logged in. 
-                <RequireAuth>
-                  <VerifyPhone />
-                </RequireAuth>
-              } />
-              
-              <Route path="/track" element={<TrackComplaint />} />
-              <Route path="/my-complaints" element={
-                <ProtectedRoute allowedRoles={['CITIZEN']}>
-                  <MyComplaints />
-                </ProtectedRoute>
-              } />
-              <Route path="/complaints/:trackingId" element={
-                <RequireAuth>
-                  <ComplaintDetail />
-                </RequireAuth>
-              } />
-              
-              <Route path="/dashboard" element={<DashboardRouter />} />
-              <Route path="/citizen/*" element={
-                <ProtectedRoute allowedRoles={['CITIZEN']}>
-                  <CitizenDashboard />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/officer/*" element={
-                <ProtectedRoute allowedRoles={['OFFICER', 'ADMIN']}>
-                  <OfficerDashboard />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/admin/*" element={
-                <ProtectedRoute allowedRoles={['ADMIN']}>
-                  <AdminDashboard />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/security-lab" element={
-                <ProtectedRoute allowedRoles={['ADMIN', 'OFFICER']}>
-                  <SecurityLab />
-                </ProtectedRoute>
-              } />
-            </Routes>
+            <ErrorBoundary>
+              <Routes>
+                <Route path="/" element={<Landing />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/verify-phone" element={
+                  // VerifyPhone should not be wrapped in ProtectedRoute because ProtectedRoute redirects TO verify-phone.
+                  // But it needs to check if the user is logged in. 
+                  <RequireAuth>
+                    <VerifyPhone />
+                  </RequireAuth>
+                } />
+                
+                <Route path="/track" element={<TrackComplaint />} />
+                <Route path="/my-complaints" element={
+                  <ProtectedRoute allowedRoles={['CITIZEN']}>
+                    <MyComplaints />
+                  </ProtectedRoute>
+                } />
+                <Route path="/complaints/:trackingId" element={
+                  <RequireAuth>
+                    <ComplaintDetail />
+                  </RequireAuth>
+                } />
+                
+                <Route path="/dashboard" element={<DashboardRouter />} />
+                <Route path="/citizen/*" element={
+                  <ProtectedRoute allowedRoles={['CITIZEN']}>
+                    <CitizenDashboard />
+                  </ProtectedRoute>
+                } />
+                
+                <Route path="/officer/*" element={
+                  <ProtectedRoute allowedRoles={['OFFICER', 'ADMIN']}>
+                    <OfficerDashboard />
+                  </ProtectedRoute>
+                } />
+                
+                <Route path="/admin/*" element={
+                  <ProtectedRoute allowedRoles={['ADMIN']}>
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                } />
+                
+                <Route path="/security-lab" element={
+                  <ProtectedRoute allowedRoles={['ADMIN', 'OFFICER']}>
+                    <SecurityLab />
+                  </ProtectedRoute>
+                } />
+              </Routes>
+            </ErrorBoundary>
           </main>
         </div>
       </BrowserRouter>

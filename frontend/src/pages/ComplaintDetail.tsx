@@ -30,6 +30,9 @@ const ComplaintDetail = () => {
   const [newStatus, setNewStatus] = useState('');
   const [updateNote, setUpdateNote] = useState('');
   const [updating, setUpdating] = useState(false);
+  
+  // Store secure blob URLs for evidence
+  const [evidenceUrls, setEvidenceUrls] = useState<Record<number, string>>({});
 
   useEffect(() => {
     fetchComplaint();
@@ -59,6 +62,19 @@ const ComplaintDetail = () => {
       const res = await api.get(url);
       setComplaint(res.data);
       setNewStatus(res.data.status);
+      
+      // Fetch secure evidence images
+      if (res.data.evidence && res.data.evidence.length > 0) {
+        res.data.evidence.forEach(async (ev: any) => {
+          try {
+            const imageRes = await api.get(`/complaints/evidence/${ev.id}`, { responseType: 'blob' });
+            const blobUrl = URL.createObjectURL(imageRes.data);
+            setEvidenceUrls(prev => ({ ...prev, [ev.id]: blobUrl }));
+          } catch (e) {
+            console.error('Failed to load evidence image', e);
+          }
+        });
+      }
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to load complaint details.');
     } finally {
@@ -134,6 +150,12 @@ const ComplaintDetail = () => {
               <span className="flex items-center gap-1">
                 <MapPin className="w-4 h-4" /> {complaint.category || 'General'}
               </span>
+              {(isOfficer || complaint.ai_priority) && (
+                <span className="flex items-center gap-1">
+                  <AlertTriangle className={`w-4 h-4 ${complaint.final_priority === 'HIGH' || complaint.final_priority === 'CRITICAL' ? 'text-rose-500' : 'text-amber-500'}`} />
+                  Priority: {complaint.final_priority}
+                </span>
+              )}
               <span className="flex items-center gap-1">
                 <Clock className="w-4 h-4" /> {format(new Date(complaint.created_at), 'dd MMM yyyy, h:mm a')}
               </span>
@@ -201,6 +223,40 @@ const ComplaintDetail = () => {
                     <Popup>{complaint.title}</Popup>
                   </Marker>
                 </MapContainer>
+              </div>
+            )}
+
+            {complaint.evidence && complaint.evidence.length > 0 && (
+              <div className="mt-8">
+                <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 border-b border-slate-100 pb-2">Evidence</h3>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                  {complaint.evidence.map((ev: any) => (
+                    <div key={ev.id} className="relative group rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-slate-50 aspect-square flex items-center justify-center">
+                      {!evidenceUrls[ev.id] ? (
+                         <Loader2 className="w-6 h-6 text-slate-300 animate-spin" />
+                      ) : (
+                         <>
+                           <img 
+                             src={evidenceUrls[ev.id]} 
+                             alt="Evidence" 
+                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                             onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/400x400/e2e8f0/475569?text=Image+Unavailable' }}
+                           />
+                           <a 
+                             href={evidenceUrls[ev.id]} 
+                             target="_blank" 
+                             rel="noopener noreferrer"
+                             className="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/20 transition-colors flex items-center justify-center"
+                           >
+                             <span className="opacity-0 group-hover:opacity-100 bg-white/90 text-slate-900 text-xs font-bold px-3 py-1.5 rounded-full shadow-sm transition-opacity">
+                               View Full
+                             </span>
+                           </a>
+                         </>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>

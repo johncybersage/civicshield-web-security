@@ -179,7 +179,16 @@ const CreateComplaint = () => {
             </div>
           </div>
         ) : (
-          <form onSubmit={(e) => { e.preventDefault(); if (step === 3) handleSubmit(e); }} className="space-y-6 relative z-10">
+          <form 
+            onSubmit={(e) => { e.preventDefault(); if (step === 3) handleSubmit(e); }} 
+            onKeyDown={(e) => {
+              // Prevent implicit submission on Enter key, except for textareas
+              if (e.key === 'Enter' && (e.target as HTMLElement).tagName !== 'TEXTAREA') {
+                e.preventDefault();
+              }
+            }}
+            className="space-y-6 relative z-10"
+          >
           
           {step === 1 && (
             <div className="space-y-6 animation-fade-in">
@@ -236,17 +245,7 @@ const CreateComplaint = () => {
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                 />
-                <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Phone Number (Optional)</label>
-                <input
-                  type="tel"
-                  className="w-full px-4 py-2 bg-white/50 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 transition-colors"
-                  placeholder="For updates on your complaint"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                />
               </div>
-            </div>
             </div>
           )}
 
@@ -264,6 +263,18 @@ const CreateComplaint = () => {
                 <p className="mt-1 text-xs text-slate-500">
                   Upload a photo related to the incident (Max 5MB).
                 </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Phone Number (Optional)</label>
+                <input
+                  type="tel"
+                  className="w-full px-4 py-2 bg-white/50 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 transition-colors"
+                  placeholder="For updates on your complaint"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }}
+                />
               </div>
 
               <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-200 mt-4">

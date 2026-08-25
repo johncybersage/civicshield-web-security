@@ -39,6 +39,16 @@ class ComplaintUpdate(BaseModel):
     assigned_officer_id: Optional[int] = None
     note: Optional[str] = None # Added for officer status update notes
 
+class ComplaintEvidenceSchema(BaseModel):
+    id: int
+    complaint_id: int
+    file_path: str
+    file_name: str
+    file_type: str
+    uploaded_at: datetime
+    
+    model_config = {"from_attributes": True}
+
 class Complaint(ComplaintBase):
     id: int
     tracking_id: Optional[str] = None
@@ -52,6 +62,7 @@ class Complaint(ComplaintBase):
     created_at: datetime
     updated_at: Optional[datetime] = None
     resolved_at: Optional[datetime] = None
+    evidence: List[ComplaintEvidenceSchema] = []
 
     model_config = {"from_attributes": True}
 
