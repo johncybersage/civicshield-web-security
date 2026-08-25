@@ -112,7 +112,11 @@ const MyComplaints = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredComplaints.map(complaint => (
-            <div key={complaint.id} className="bg-white border border-slate-200 rounded-2xl p-5 hover:shadow-md transition-shadow flex flex-col h-full relative overflow-hidden group">
+            <div 
+              key={complaint.id} 
+              onClick={() => navigate(`/complaints/${complaint.tracking_id || complaint.id}`)}
+              className="cursor-pointer bg-white border border-slate-200 rounded-2xl p-5 hover:shadow-md transition-all flex flex-col h-full relative overflow-hidden group hover:border-primary-200"
+            >
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary-400 to-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity"></div>
               
               <div className="flex justify-between items-start mb-3">
@@ -137,12 +141,9 @@ const MyComplaints = () => {
                   <span className="text-xs text-slate-400 font-medium">
                     {format(new Date(complaint.created_at), 'dd MMM yyyy')}
                   </span>
-                  <button
-                    onClick={() => navigate(`/complaints/${complaint.tracking_id || complaint.id}`)}
-                    className="text-sm font-medium text-primary-600 hover:text-primary-700"
-                  >
+                  <div className="text-sm font-medium text-primary-600 group-hover:text-primary-700 transition-colors">
                     View Details &rarr;
-                  </button>
+                  </div>
                 </div>
               </div>
             </div>

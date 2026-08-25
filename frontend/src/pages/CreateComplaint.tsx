@@ -19,6 +19,19 @@ const CreateComplaint = () => {
   const navigate = useNavigate();
 
   const [file, setFile] = useState<File | null>(null);
+  const [filePreview, setFilePreview] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!file) {
+      setFilePreview(null);
+      return;
+    }
+    const objectUrl = URL.createObjectURL(file);
+    setFilePreview(objectUrl);
+    
+    // Free memory when ever this component is unmounted or file changes
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [file]);
 
   const [duplicates, setDuplicates] = useState<any[]>([]);
   const [showDuplicates, setShowDuplicates] = useState(false);
@@ -258,11 +271,23 @@ const CreateComplaint = () => {
                   type="file"
                   accept="image/jpeg, image/png, image/webp"
                   className="w-full px-4 py-2 bg-white/50 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 transition-colors"
-                  onChange={(e) => setFile(e.target.files ? e.target.files[0] : null)}
+                  onChange={(e) => setFile(e.target.files && e.target.files.length > 0 ? e.target.files[0] : null)}
                 />
                 <p className="mt-1 text-xs text-slate-500">
                   Upload a photo related to the incident (Max 5MB).
                 </p>
+                {filePreview && (
+                  <div className="mt-4 relative inline-block">
+                    <img src={filePreview} alt="Preview" className="h-32 rounded-lg border border-slate-200 shadow-sm object-cover" />
+                    <button 
+                      type="button" 
+                      onClick={() => setFile(null)} 
+                      className="absolute -top-2 -right-2 bg-rose-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs shadow-sm hover:bg-rose-600"
+                    >
+                      ×
+                    </button>
+                  </div>
+                )}
               </div>
 
               <div>

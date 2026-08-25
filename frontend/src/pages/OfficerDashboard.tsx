@@ -62,10 +62,14 @@ const OfficerDashboard = () => {
         <div className="bg-white shadow overflow-hidden sm:rounded-md border border-slate-200">
           <ul className="divide-y divide-slate-200">
             {complaints.map((complaint) => (
-              <li key={complaint.id}>
-                <div className="px-4 py-4 sm:px-6 hover:bg-slate-50 transition-colors">
+              <li 
+                key={complaint.id} 
+                onClick={() => navigate(`/complaints/${complaint.tracking_id || complaint.id}`)}
+                className="cursor-pointer group"
+              >
+                <div className="px-4 py-4 sm:px-6 group-hover:bg-slate-50 transition-colors">
                   <div className="flex items-center justify-between">
-                    <p className="text-sm font-bold text-primary-600 truncate">{complaint.title}</p>
+                    <p className="text-sm font-bold text-primary-600 truncate group-hover:text-primary-700">{complaint.title}</p>
                     <div className="ml-2 flex-shrink-0 flex">
                       <p className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
                         ${complaint.status === 'RESOLVED' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
@@ -87,26 +91,25 @@ const OfficerDashboard = () => {
                       )}
                       
                       {complaint.status !== 'RESOLVED' && (
-                        <select 
-                          className="text-xs border-slate-300 rounded focus:ring-primary-500 focus:border-primary-500"
-                          value={complaint.status}
-                          onChange={(e) => updateStatus(complaint.id, e.target.value)}
-                        >
-                          <option value="SUBMITTED">SUBMITTED</option>
-                          <option value="UNDER_REVIEW">UNDER REVIEW</option>
-                          <option value="IN_PROGRESS">IN PROGRESS</option>
-                          <option value="RESOLVED">RESOLVED</option>
-                        </select>
+                        <div onClick={(e) => e.stopPropagation()}>
+                          <select 
+                            className="text-xs border-slate-300 rounded focus:ring-primary-500 focus:border-primary-500"
+                            value={complaint.status}
+                            onChange={(e) => updateStatus(complaint.id, e.target.value)}
+                          >
+                            <option value="SUBMITTED">SUBMITTED</option>
+                            <option value="UNDER_REVIEW">UNDER REVIEW</option>
+                            <option value="IN_PROGRESS">IN PROGRESS</option>
+                            <option value="RESOLVED">RESOLVED</option>
+                          </select>
+                        </div>
                       )}
                       {complaint.status === 'RESOLVED' && (
                         <CheckCircle className="text-green-500 h-5 w-5" />
                       )}
-                      <button 
-                        onClick={() => navigate(`/complaints/${complaint.tracking_id || complaint.id}`)}
-                        className="ml-2 text-sm text-primary-600 hover:text-primary-800 font-medium"
-                      >
+                      <div className="ml-2 text-sm text-primary-600 group-hover:text-primary-800 font-medium">
                         View Details &rarr;
-                      </button>
+                      </div>
                     </div>
                   </div>
                 </div>
