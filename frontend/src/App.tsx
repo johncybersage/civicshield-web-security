@@ -11,6 +11,10 @@ import AdminDashboard from './pages/AdminDashboard';
 import SecurityLab from './pages/SecurityLab';
 import VerifyPhone from './pages/VerifyPhone';
 
+import TrackComplaint from './pages/TrackComplaint';
+import MyComplaints from './pages/MyComplaints';
+import ComplaintDetail from './pages/ComplaintDetail';
+
 const RequireAuth = ({ children }: { children: JSX.Element }) => {
   const { user, loading } = useAuth();
   if (loading) return <div className="flex h-screen items-center justify-center">Loading...</div>;
@@ -63,6 +67,18 @@ function App() {
                 // But it needs to check if the user is logged in. 
                 <RequireAuth>
                   <VerifyPhone />
+                </RequireAuth>
+              } />
+              
+              <Route path="/track" element={<TrackComplaint />} />
+              <Route path="/my-complaints" element={
+                <ProtectedRoute allowedRoles={['CITIZEN']}>
+                  <MyComplaints />
+                </ProtectedRoute>
+              } />
+              <Route path="/complaints/:trackingId" element={
+                <RequireAuth>
+                  <ComplaintDetail />
                 </RequireAuth>
               } />
               

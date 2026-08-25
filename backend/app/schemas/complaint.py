@@ -20,6 +20,7 @@ class ComplaintComment(ComplaintCommentBase):
 class ComplaintBase(BaseModel):
     title: str = Field(..., min_length=5, max_length=200)
     description: str = Field(..., min_length=10, max_length=5000)
+    phone_number: Optional[str] = None
     location: Optional[str] = None
     latitude: Optional[float] = Field(None, ge=-90, le=90)
     longitude: Optional[float] = Field(None, ge=-180, le=180)
@@ -36,9 +37,11 @@ class ComplaintUpdate(BaseModel):
     final_priority: Optional[Priority] = None
     category: Optional[str] = None
     assigned_officer_id: Optional[int] = None
+    note: Optional[str] = None # Added for officer status update notes
 
 class Complaint(ComplaintBase):
     id: int
+    tracking_id: Optional[str] = None
     category: Optional[str] = None
     ai_category: Optional[str] = None
     ai_priority: Optional[Priority] = None
@@ -54,3 +57,29 @@ class Complaint(ComplaintBase):
 
 class ComplaintWithComments(Complaint):
     comments: List[ComplaintComment] = []
+
+class ComplaintHistorySchema(BaseModel):
+    id: int
+    complaint_id: int
+    old_status: Optional[ComplaintStatus]
+    new_status: ComplaintStatus
+    note: Optional[str]
+    updated_by_user_id: int
+    created_at: datetime
+    
+    model_config = {"from_attributes": True}
+
+class ComplaintWithHistory(ComplaintWithComments):
+    history: List[ComplaintHistorySchema] = []
+
+class PublicComplaintTrackingSchema(BaseModel):
+    tracking_id: str
+    title: str
+    category: Optional[str]
+    status: ComplaintStatus
+    created_at: datetime
+    updated_at: Optional[datetime]
+    history: List[ComplaintHistorySchema] = []
+    
+    model_config = {"from_attributes": True}
+

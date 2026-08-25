@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import { ClipboardList, CheckCircle } from 'lucide-react';
 
 interface Complaint {
   id: number;
+  tracking_id?: string;
   title: string;
   description: string;
   status: string;
@@ -16,6 +18,7 @@ interface Complaint {
 const OfficerDashboard = () => {
   const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchComplaints();
@@ -98,6 +101,12 @@ const OfficerDashboard = () => {
                       {complaint.status === 'RESOLVED' && (
                         <CheckCircle className="text-green-500 h-5 w-5" />
                       )}
+                      <button 
+                        onClick={() => navigate(`/complaints/${complaint.tracking_id || complaint.id}`)}
+                        className="ml-2 text-sm text-primary-600 hover:text-primary-800 font-medium"
+                      >
+                        View Details &rarr;
+                      </button>
                     </div>
                   </div>
                 </div>

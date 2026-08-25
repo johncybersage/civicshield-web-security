@@ -82,9 +82,20 @@ def create_complaint(
     except ValueError:
         ai_priority = Priority.LOW
 
+    from app.models.complaint import ComplaintHistory
+    import uuid
+    from datetime import datetime
+
+    # Generate tracking ID: CIV-YYYYMMDD-<short-uuid>
+    date_prefix = datetime.utcnow().strftime("%Y%m%d")
+    short_uuid = str(uuid.uuid4())[:6].upper()
+    tracking_id = f"CIV-{date_prefix}-{short_uuid}"
+
     complaint = Complaint(
+        tracking_id=tracking_id,
         title=safe_title,
         description=safe_description,
+        phone_number=sanitize_text(complaint_in.phone_number) if complaint_in.phone_number else None,
         location=safe_location,
         latitude=complaint_in.latitude,
         longitude=complaint_in.longitude,
@@ -100,6 +111,16 @@ def create_complaint(
     db.add(complaint)
     db.commit()
     db.refresh(complaint)
+    
+    # Create initial history entry
+    history = ComplaintHistory(
+        complaint_id=complaint.id,
+        new_status=complaint.status,
+        note="Complaint submitted by citizen.",
+        updated_by_user_id=current_user.id
+    )
+    db.add(history)
+    db.commit()
     
     log_audit(db, "COMPLAINT_CREATED", current_user.id, request, f"Complaint ID: {complaint.id}")
     return complaint
@@ -118,15 +139,36 @@ def read_complaints(
         complaints = db.query(Complaint).offset(skip).limit(limit).all()
     return complaints
 
-@router.get("/{id}", response_model=ComplaintWithComments)
+from app.schemas.complaint import ComplaintWithHistory, PublicComplaintTrackingSchema
+
+@router.get("/track/{tracking_id}", response_model=PublicComplaintTrackingSchema)
+@limiter.limit("20/minute")
+def track_complaint(
+    *,
+    db: Session = Depends(get_db),
+    tracking_id: str,
+    request: Request
+) -> Any:
+    """Publicly track a complaint."""
+    complaint = db.query(Complaint).filter(Complaint.tracking_id == tracking_id).first()
+    if not complaint:
+        raise HTTPException(status_code=404, detail="Complaint not found")
+        
+    return complaint
+
+@router.get("/{id_or_tracking_id}", response_model=ComplaintWithHistory)
 def read_complaint(
     *,
     db: Session = Depends(get_db),
-    id: int,
+    id_or_tracking_id: str,
     current_user: User = Depends(get_current_user),
 ) -> Any:
-    """Get a specific complaint by ID."""
-    complaint = db.query(Complaint).filter(Complaint.id == id).first()
+    """Get a specific complaint by ID or tracking_id."""
+    if id_or_tracking_id.isdigit():
+        complaint = db.query(Complaint).filter(Complaint.id == int(id_or_tracking_id)).first()
+    else:
+        complaint = db.query(Complaint).filter(Complaint.tracking_id == id_or_tracking_id).first()
+        
     if not complaint:
         raise HTTPException(status_code=404, detail="Complaint not found")
     
@@ -154,6 +196,10 @@ def update_complaint(
         raise HTTPException(status_code=403, detail="You are not authorized to update this complaint.")
 
     update_data = complaint_in.model_dump(exclude_unset=True)
+    status_changed = False
+    old_status = complaint.status
+    new_status = complaint.status
+
     if "status" in update_data:
         new_status = update_data["status"]
         if new_status != complaint.status:
@@ -171,17 +217,35 @@ def update_complaint(
             if new_status not in allowed_transitions.get(complaint.status, []):
                 raise HTTPException(status_code=400, detail=f"Invalid status transition from {complaint.status} to {new_status}.")
 
-        if new_status == "RESOLVED":
-            complaint.resolved_at = datetime.utcnow()
+            if new_status == "RESOLVED":
+                complaint.resolved_at = datetime.utcnow()
+                
+            status_changed = True
         
     for field, value in update_data.items():
-        setattr(complaint, field, value)
-        
+        if field != "note":
+            setattr(complaint, field, value)
+            
     db.add(complaint)
+    
+    if status_changed:
+        from app.models.complaint import ComplaintHistory
+        history = ComplaintHistory(
+            complaint_id=complaint.id,
+            old_status=old_status,
+            new_status=new_status,
+            note=update_data.get("note", f"Status updated to {new_status}."),
+            updated_by_user_id=current_user.id
+        )
+        db.add(history)
+        
     db.commit()
     db.refresh(complaint)
     
-    log_audit(db, "COMPLAINT_UPDATED", current_user.id, request, f"Complaint ID: {complaint.id} status changed to {complaint.status}")
+    if status_changed:
+        log_audit(db, "COMPLAINT_UPDATED", current_user.id, request, f"Complaint ID: {complaint.id} status changed to {complaint.status}")
+    else:
+        log_audit(db, "COMPLAINT_UPDATED", current_user.id, request, f"Complaint ID: {complaint.id} updated")
     
     return complaint
 

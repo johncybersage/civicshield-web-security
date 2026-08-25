@@ -12,6 +12,7 @@ const CreateComplaint = () => {
   const [locationAccuracy, setLocationAccuracy] = useState<number | null>(null);
   const [locationSource, setLocationSource] = useState('');
   const [address, setAddress] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -21,6 +22,7 @@ const CreateComplaint = () => {
 
   const [duplicates, setDuplicates] = useState<any[]>([]);
   const [showDuplicates, setShowDuplicates] = useState(false);
+  const [successData, setSuccessData] = useState<any>(null);
 
   const handleLocationSelect = (lat: number, lng: number, acc: number | null, source: string, addr: string) => {
     setLatitude(lat);
@@ -96,6 +98,7 @@ const CreateComplaint = () => {
         location_accuracy: locationAccuracy,
         location_source: locationSource,
         human_readable_address: address,
+        phone_number: phoneNumber,
       });
       
       const complaintId = res.data.id;
@@ -110,7 +113,7 @@ const CreateComplaint = () => {
         });
       }
       
-      navigate('/citizen');
+      setSuccessData(res.data);
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to submit complaint.');
     } finally {
@@ -137,7 +140,46 @@ const CreateComplaint = () => {
           </div>
         )}
 
-        <form onSubmit={(e) => { e.preventDefault(); if (step === 3) handleSubmit(e); }} className="space-y-6 relative z-10">
+        {successData ? (
+          <div className="text-center relative z-10 py-10 animation-fade-in">
+            <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
+              <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+            </div>
+            <h2 className="text-3xl font-bold text-slate-900 mb-2">Complaint Registered Successfully</h2>
+            <p className="text-slate-600 mb-8 max-w-md mx-auto">Your issue has been submitted. Government staff will review it shortly. Please save your tracking ID.</p>
+            
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 mb-8 max-w-md mx-auto relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-1 h-full bg-primary-500"></div>
+              <p className="text-sm font-medium text-slate-500 mb-1 uppercase tracking-wider">Tracking ID</p>
+              <div className="flex items-center justify-center gap-3">
+                <p className="text-2xl font-bold text-slate-900 tracking-tight">{successData.tracking_id}</p>
+                <button 
+                  onClick={() => navigator.clipboard.writeText(successData.tracking_id)}
+                  className="p-2 bg-white border border-slate-200 rounded-md hover:bg-slate-50 text-slate-500 hover:text-slate-900 transition-colors tooltip"
+                  title="Copy Tracking ID"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                </button>
+              </div>
+            </div>
+            
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <button
+                onClick={() => navigate(`/complaints/${successData.tracking_id}`)}
+                className="bg-primary-600 text-white px-6 py-3 rounded-xl font-medium hover:bg-primary-700 shadow-sm hover:shadow-md transition-all"
+              >
+                View Complaint Details
+              </button>
+              <button
+                onClick={() => navigate('/my-complaints')}
+                className="bg-white text-slate-700 px-6 py-3 rounded-xl font-medium hover:bg-slate-50 shadow-sm border border-slate-200 transition-all"
+              >
+                Go to My Complaints
+              </button>
+            </div>
+          </div>
+        ) : (
+          <form onSubmit={(e) => { e.preventDefault(); if (step === 3) handleSubmit(e); }} className="space-y-6 relative z-10">
           
           {step === 1 && (
             <div className="space-y-6 animation-fade-in">
@@ -194,7 +236,17 @@ const CreateComplaint = () => {
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                 />
+                <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Phone Number (Optional)</label>
+                <input
+                  type="tel"
+                  className="w-full px-4 py-2 bg-white/50 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 transition-colors"
+                  placeholder="For updates on your complaint"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                />
               </div>
+            </div>
             </div>
           )}
 
@@ -293,6 +345,7 @@ const CreateComplaint = () => {
             </div>
           )}
         </form>
+        )}
       </div>
     </div>
   );
