@@ -190,7 +190,11 @@ def verify_otp(
         log_audit(db, "OTP_VERIFY_FAILED", current_user.id, request, "Max attempts exceeded")
         raise HTTPException(status_code=400, detail="Maximum OTP attempts exceeded. Please request a new one.")
 
-    if settings.OTP_DEMO_MODE and otp_verify.otp == settings.DEMO_OTP:
+    is_demo_mode = str(settings.OTP_DEMO_MODE).strip().lower() in ("true", "1", "t", "y", "yes", "on")
+    demo_otp_val = str(settings.DEMO_OTP).strip()
+    input_otp_val = str(otp_verify.otp).strip()
+
+    if is_demo_mode and input_otp_val == demo_otp_val:
         pass # Bypass hash check
     else:
         input_hash = hash_otp(otp_verify.otp)

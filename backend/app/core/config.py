@@ -54,6 +54,13 @@ class Settings(BaseSettings):
     # Demo OTP Mode
     OTP_DEMO_MODE: bool = False
     DEMO_OTP: str = "123456"
+
+    @field_validator("OTP_DEMO_MODE", mode="before")
+    @classmethod
+    def parse_demo_mode(cls, v: Any) -> bool:
+        if isinstance(v, str):
+            return v.strip().lower() in ("true", "1", "t", "y", "yes", "on")
+        return bool(v)
     
     # Admin
     ADMIN_EMAIL: str = "admin@demo.local"
