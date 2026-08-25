@@ -6,35 +6,42 @@ from app.models.complaint import Complaint, Priority, ComplaintStatus
 def seed_db():
     db = SessionLocal()
     
-    # Check if users already exist
-    if db.query(User).count() > 0:
-        print("Database already seeded.")
+    admin = db.query(User).filter(User.email=="admin@demo.local").first()
+    if not admin:
+        # Create demo accounts
+        admin = User(
+            name="Admin User",
+            email="admin@demo.local",
+            password_hash=get_password_hash("admin_password"),
+            role=UserRole.ADMIN
+        )
+        
+        officer = User(
+            name="Officer Jane",
+            email="officer@demo.local",
+            password_hash=get_password_hash("officer_password"),
+            role=UserRole.OFFICER
+        )
+        
+        citizen = User(
+            name="Citizen Smith",
+            email="citizen@demo.local",
+            password_hash=get_password_hash("citizen_password"),
+            role=UserRole.CITIZEN
+        )
+
+        db.add_all([admin, officer, citizen])
+        db.commit()
+        db.refresh(admin)
+        db.refresh(officer)
+        db.refresh(citizen)
+    else:
+        officer = db.query(User).filter(User.email=="officer@demo.local").first()
+        citizen = db.query(User).filter(User.email=="citizen@demo.local").first()
+
+    if db.query(Complaint).count() > 0:
+        print("Database already seeded with complaints.")
         return
-
-    # Create demo accounts
-    admin = User(
-        name="Admin User",
-        email="admin@demo.local",
-        password_hash=get_password_hash("admin_password"),
-        role=UserRole.ADMIN
-    )
-    
-    officer = User(
-        name="Officer Jane",
-        email="officer@demo.local",
-        password_hash=get_password_hash("officer_password"),
-        role=UserRole.OFFICER
-    )
-    
-    citizen = User(
-        name="Citizen Smith",
-        email="citizen@demo.local",
-        password_hash=get_password_hash("citizen_password"),
-        role=UserRole.CITIZEN
-    )
-
-    db.add_all([admin, officer, citizen])
-    db.commit()
     
     # Create some demo complaints
     c1 = Complaint(

@@ -5,6 +5,11 @@ os.environ["DATABASE_URL"] = "sqlite:///./test.db"
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+
+# Forcefully override the settings module so the app uses SQLite too
+from app.core.config import settings
+settings.DATABASE_URL = "sqlite:///./test.db"
+
 from fastapi.testclient import TestClient
 
 from app.core.database import Base, get_db
