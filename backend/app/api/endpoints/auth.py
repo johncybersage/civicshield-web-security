@@ -197,13 +197,11 @@ def verify_otp(
     if is_demo_mode and input_otp_val == demo_otp_val:
         pass # Bypass hash check
     else:
-        import os
         input_hash = hash_otp(otp_verify.otp)
         if input_hash != otp_attempt.otp_hash:
             db.commit()
             log_audit(db, "OTP_VERIFY_FAILED", current_user.id, request, "Incorrect OTP")
-            debug_info = f"mode={is_demo_mode}, env_mode={os.environ.get('OTP_DEMO_MODE')}, demo_otp={demo_otp_val}, input={input_otp_val}"
-            raise HTTPException(status_code=400, detail=f"Incorrect OTP [{debug_info}]")
+            raise HTTPException(status_code=400, detail="Incorrect OTP")
 
     # Success
     otp_attempt.is_used = True
