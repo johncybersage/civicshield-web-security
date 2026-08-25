@@ -15,15 +15,21 @@ from app.security.auth import verify_password, get_password_hash, create_access_
 from app.api.deps import get_current_user
 from app.core.rate_limit import limiter
 from app.services.otp_service import generate_otp, hash_otp, send_otp_sms
+from seed_demo import seed_demo_user
 
 router = APIRouter()
+
+@router.get("/seed")
+def trigger_seed():
+    seed_demo_user()
+    return {"status": "success", "message": "Demo users seeded"}
 
 def log_audit(
     db: Session,
     action: str,
-    user_id: int = None,
+    user_id: Optional[int] = None,
     request: Request = None,
-    metadata_info: str = None
+    metadata_info: Optional[str] = None
 ):
     ip = None
 
