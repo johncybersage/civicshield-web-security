@@ -43,9 +43,8 @@ class ComplaintEvidenceSchema(BaseModel):
     id: int
     complaint_id: int
     file_path: str
-    file_name: str
     file_type: str
-    uploaded_at: datetime
+    created_at: datetime
     
     model_config = {"from_attributes": True}
 
