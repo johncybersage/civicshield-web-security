@@ -24,48 +24,7 @@ import logging
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Seed demo account securely on startup
-    db = SessionLocal()
-    try:
-        demo_email = "demo@civicshield.local"
-        demo_password_plain = "CivicShieldDemo@2026"
-        existing_demo = db.query(User).filter(User.email == demo_email).first()
-        
-        if not existing_demo:
-            demo_user = User(
-                email=demo_email,
-                name="Demo User",
-                password_hash=get_password_hash(demo_password_plain),
-                role=UserRole.CITIZEN,
-                is_phone_verified=True,
-                is_active=True
-            )
-            db.add(demo_user)
-            db.commit()
-            logging.info("Demo account ready.")
-        else:
-            # Idempotent robust check
-            needs_commit = False
-            
-            if not existing_demo.is_active or not existing_demo.is_phone_verified:
-                existing_demo.is_active = True
-                existing_demo.is_phone_verified = True
-                needs_commit = True
-                
-            # Only rehash if the password doesn't match
-            if not verify_password(demo_password_plain, existing_demo.password_hash):
-                existing_demo.password_hash = get_password_hash(demo_password_plain)
-                needs_commit = True
-                
-            if needs_commit:
-                db.commit()
-                
-            logging.info("Demo account ready.")
-    except Exception as e:
-        db.rollback()
-        logging.error("Error seeding demo account.")
-    finally:
-        db.close()
+    # Seeding demo account is now handled by seed_demo.py run during deployment
     yield
 
 app = FastAPI(
