@@ -5,6 +5,9 @@ interface AIAnalysisCardProps {
   aiPriority?: string | null;
   aiCategory?: string | null;
   finalPriority?: string | null;
+  aiSummary?: string | null;
+  aiDepartment?: string | null;
+  aiNextAction?: string | null;
 }
 
 const getPriorityConfig = (priority: string | null | undefined) => {
@@ -22,7 +25,14 @@ const getPriorityConfig = (priority: string | null | undefined) => {
   }
 };
 
-const AIAnalysisCard: React.FC<AIAnalysisCardProps> = ({ aiPriority, aiCategory, finalPriority }) => {
+const AIAnalysisCard: React.FC<AIAnalysisCardProps> = ({ 
+  aiPriority, 
+  aiCategory, 
+  finalPriority,
+  aiSummary,
+  aiDepartment,
+  aiNextAction
+}) => {
   // If no AI data available at all, show graceful fallback
   if (!aiPriority && !aiCategory && !finalPriority) {
     return null; // Silently hide if no AI data
@@ -69,6 +79,39 @@ const AIAnalysisCard: React.FC<AIAnalysisCardProps> = ({ aiPriority, aiCategory,
             <span className="text-sm font-semibold text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-700 px-3 py-1.5 rounded-lg">
               {aiCategory}
             </span>
+          </div>
+        )}
+
+        {/* AI Department */}
+        {aiDepartment && (
+          <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-700 pt-3 mt-3">
+            <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+              <Shield className="w-4 h-4 text-indigo-500" />
+              <span className="font-medium">Assigned Dept.</span>
+            </div>
+            <span className="text-sm font-bold text-indigo-700 dark:text-indigo-400 text-right max-w-[50%]">
+              {aiDepartment}
+            </span>
+          </div>
+        )}
+
+        {/* AI Summary */}
+        {aiSummary && (
+          <div className="border-t border-slate-100 dark:border-slate-700 pt-3 mt-3">
+            <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">AI Summary</h4>
+            <p className="text-sm text-slate-700 dark:text-slate-300 italic">
+              "{aiSummary}"
+            </p>
+          </div>
+        )}
+
+        {/* AI Next Action */}
+        {aiNextAction && (
+          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-3 mt-3">
+            <h4 className="text-xs font-bold text-amber-800 dark:text-amber-500 uppercase tracking-wider mb-1">Recommended Action</h4>
+            <p className="text-sm text-amber-900 dark:text-amber-300 font-medium">
+              {aiNextAction}
+            </p>
           </div>
         )}
 

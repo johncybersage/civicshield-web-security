@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../hooks/ThemeProvider';
 import { Shield, UserCircle, LogOut, Sun, Moon, Menu, X } from 'lucide-react';
+import NotificationBell from './NotificationBell';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
@@ -38,6 +39,8 @@ const Navbar = () => {
               {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
             </button>
 
+            {user && <NotificationBell />}
+
             {user ? (
               <>
                 <Link to="/dashboard" className="text-slate-600 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 font-medium transition-colors">
@@ -49,8 +52,17 @@ const Navbar = () => {
                   </Link>
                 )}
                 <div className="flex items-center space-x-2 pl-3 border-l border-slate-200 dark:border-slate-700">
-                  <UserCircle className="h-5 w-5 text-slate-500 dark:text-slate-400" />
-                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{user.name}</span>
+                  {user.role === 'CITIZEN' ? (
+                    <Link to="/profile" className="flex items-center space-x-2 text-slate-500 hover:text-primary-600 dark:text-slate-400 dark:hover:text-primary-400 transition-colors">
+                      <UserCircle className="h-5 w-5" />
+                      <span className="text-sm font-medium">{user.name}</span>
+                    </Link>
+                  ) : (
+                    <>
+                      <UserCircle className="h-5 w-5 text-slate-500 dark:text-slate-400" />
+                      <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{user.name}</span>
+                    </>
+                  )}
                 </div>
                 <button
                   onClick={handleLogout}
@@ -98,10 +110,17 @@ const Navbar = () => {
           <div className="px-4 py-4 space-y-3">
             {user ? (
               <>
-                <div className="flex items-center gap-2 pb-3 border-b border-slate-100 dark:border-slate-800">
-                  <UserCircle className="h-5 w-5 text-slate-500 dark:text-slate-400" />
-                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{user.name}</span>
-                </div>
+                {user.role === 'CITIZEN' ? (
+                  <Link to="/profile" onClick={() => setMobileOpen(false)} className="flex items-center gap-2 pb-3 border-b border-slate-100 dark:border-slate-800 text-slate-500 hover:text-primary-600 dark:text-slate-400 dark:hover:text-primary-400">
+                    <UserCircle className="h-5 w-5" />
+                    <span className="text-sm font-medium">{user.name}</span>
+                  </Link>
+                ) : (
+                  <div className="flex items-center gap-2 pb-3 border-b border-slate-100 dark:border-slate-800">
+                    <UserCircle className="h-5 w-5 text-slate-500 dark:text-slate-400" />
+                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{user.name}</span>
+                  </div>
+                )}
                 <Link to="/dashboard" onClick={() => setMobileOpen(false)} className="block py-2 text-slate-600 dark:text-slate-300 hover:text-primary-600 font-medium">
                   Dashboard
                 </Link>

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Enum as SQLEnum, Float
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Enum as SQLEnum, Float, Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 import enum
@@ -36,6 +36,9 @@ class Complaint(Base):
     # AI Assistance Fields
     ai_category = Column(String, nullable=True)
     ai_priority = Column(SQLEnum(Priority), nullable=True)
+    ai_summary = Column(Text, nullable=True)
+    ai_department = Column(String, nullable=True)
+    ai_next_action = Column(String, nullable=True)
     
     # Final decided priority
     final_priority = Column(SQLEnum(Priority), default=Priority.LOW)
@@ -61,6 +64,22 @@ class Complaint(Base):
     comments = relationship("ComplaintComment", back_populates="complaint", cascade="all, delete-orphan")
     evidence = relationship("ComplaintEvidence", back_populates="complaint", cascade="all, delete-orphan")
     history = relationship("ComplaintHistory", back_populates="complaint", cascade="all, delete-orphan", order_by="desc(ComplaintHistory.created_at)")
+    feedback = relationship("ComplaintFeedback", back_populates="complaint", cascade="all, delete-orphan", uselist=False)
+
+class ComplaintFeedback(Base):
+    __tablename__ = "complaint_feedback"
+
+    id = Column(Integer, primary_key=True, index=True)
+    complaint_id = Column(Integer, ForeignKey("complaints.id"), nullable=False, unique=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    rating = Column(Integer, nullable=False) # 1 to 5
+    resolved_confirmed = Column(Boolean, nullable=False)
+    comment = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    complaint = relationship("Complaint", back_populates="feedback")
+    user = relationship("User")
 
 class ComplaintEvidence(Base):
     __tablename__ = "complaint_evidence"

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import LocationPicker from '../components/LocationPicker';
+import SimilarComplaintCard from '../components/SimilarComplaintCard';
 
 const CreateComplaint = () => {
   const [title, setTitle] = useState('');
@@ -312,33 +313,11 @@ const CreateComplaint = () => {
           )}
 
           {showDuplicates && step === 3 && (
-            <div className="bg-yellow-50/90 dark:bg-yellow-900/30 backdrop-blur border-l-4 border-yellow-500 p-4 rounded-xl shadow-sm animation-fade-in">
-              <h3 className="text-sm font-bold text-yellow-800 dark:text-yellow-300">Similar Reports Found Nearby</h3>
-              <p className="text-xs text-yellow-700 dark:text-yellow-400 mb-2">We found {duplicates.length} similar reports in this area. Is your issue already reported?</p>
-              <ul className="space-y-2 mb-3">
-                {duplicates.map(d => (
-                  <li key={d.id} className="text-sm text-yellow-800 dark:text-yellow-200 bg-yellow-100/50 dark:bg-yellow-800/40 px-3 py-2 rounded-lg border border-yellow-200 dark:border-yellow-700/50">
-                    <strong>{d.title}</strong> - {d.status}
-                  </li>
-                ))}
-              </ul>
-              <div className="flex gap-3">
-                 <button
-                   type="button"
-                   onClick={() => navigate('/citizen')}
-                   className="text-xs bg-white dark:bg-slate-800 text-yellow-800 dark:text-yellow-300 px-4 py-2 rounded-lg border border-yellow-300 dark:border-yellow-600 hover:bg-yellow-50 dark:hover:bg-slate-700 transition-colors font-medium shadow-sm"
-                 >
-                   Yes, this is my issue. Cancel report.
-                 </button>
-                 <button
-                   type="button"
-                   onClick={(e) => handleSubmit(e, true)}
-                   className="text-xs bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 transition-colors font-medium shadow-sm"
-                 >
-                   No, my issue is different. Continue submitting.
-                 </button>
-              </div>
-            </div>
+            <SimilarComplaintCard 
+              duplicates={duplicates} 
+              onCancel={() => navigate('/citizen')} 
+              onContinue={(e) => handleSubmit(e, true)} 
+            />
           )}
 
           {!showDuplicates && (

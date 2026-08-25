@@ -15,6 +15,7 @@ import VerifyPhone from './pages/VerifyPhone';
 import TrackComplaint from './pages/TrackComplaint';
 import MyComplaints from './pages/MyComplaints';
 import ComplaintDetail from './pages/ComplaintDetail';
+import CitizenProfile from './pages/CitizenProfile';
 
 import ErrorBoundary from './components/ErrorBoundary';
 
@@ -79,6 +80,11 @@ function App() {
                   <Route path="/my-complaints" element={
                     <ProtectedRoute allowedRoles={['CITIZEN']}>
                       <MyComplaints />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/profile" element={
+                    <ProtectedRoute allowedRoles={['CITIZEN']}>
+                      <CitizenProfile />
                     </ProtectedRoute>
                   } />
                   <Route path="/complaints/:trackingId" element={

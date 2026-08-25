@@ -57,7 +57,19 @@ def check_duplicate(
         Complaint.status != "RESOLVED"
     ).limit(5).all()
 
-    return {"duplicates": duplicates}
+    # Return safe subset to prevent PII exposure
+    safe_duplicates = []
+    for d in duplicates:
+        safe_duplicates.append({
+            "tracking_id": d.tracking_id,
+            "title": d.title,
+            "category": d.category,
+            "status": d.status,
+            "human_readable_address": d.human_readable_address,
+            "created_at": d.created_at
+        })
+
+    return {"duplicates": safe_duplicates}
 
 @router.post("/", response_model=ComplaintSchema)
 @limiter.limit("10/minute")
@@ -139,7 +151,35 @@ def read_complaints(
         complaints = db.query(Complaint).offset(skip).limit(limit).all()
     return complaints
 
-from app.schemas.complaint import ComplaintWithHistory, PublicComplaintTrackingSchema
+from app.schemas.complaint import ComplaintWithHistory, PublicComplaintTrackingSchema, AggregateStats, ComplaintFeedbackCreate, ComplaintFeedbackSchema
+
+@router.get("/aggregate-stats", response_model=AggregateStats)
+def get_aggregate_stats(db: Session = Depends(get_db)):
+    """Public endpoint for homepage statistics."""
+    total = db.query(Complaint).count()
+    resolved = db.query(Complaint).filter(Complaint.status == ComplaintStatus.RESOLVED).count()
+    
+    rate = 0.0
+    if total > 0:
+        rate = (resolved / total) * 100.0
+        
+    resolved_complaints = db.query(Complaint).filter(
+        Complaint.status == ComplaintStatus.RESOLVED,
+        Complaint.resolved_at.isnot(None)
+    ).all()
+    
+    avg_days = 0.0
+    if resolved_complaints:
+        total_days = sum((c.resolved_at - c.created_at).total_seconds() / 86400.0 for c in resolved_complaints)
+        avg_days = total_days / len(resolved_complaints)
+        
+    return {
+        "total_complaints": total,
+        "resolved_complaints": resolved,
+        "resolution_rate": rate,
+        "average_resolution_days": avg_days
+    }
+
 
 @router.get("/track/{tracking_id}", response_model=PublicComplaintTrackingSchema)
 @limiter.limit("20/minute")
@@ -280,6 +320,62 @@ def create_comment(
     log_audit(db, "COMMENT_ADDED", current_user.id, request, f"Complaint ID: {id}")
     
     return comment
+
+@router.get("/{id}/comments", response_model=List[ComplaintCommentSchema])
+def get_comments(
+    *,
+    db: Session = Depends(get_db),
+    id: int,
+    current_user: User = Depends(get_current_user),
+) -> Any:
+    """Get comments for a complaint (Citizen can see their own, Officer/Admin can see all)."""
+    complaint = db.query(Complaint).filter(Complaint.id == id).first()
+    if not complaint:
+        raise HTTPException(status_code=404, detail="Complaint not found")
+        
+    if current_user.role == UserRole.CITIZEN and complaint.citizen_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+        
+    return complaint.comments
+
+from app.models.complaint import ComplaintFeedback
+
+@router.post("/{id}/feedback", response_model=ComplaintFeedbackSchema)
+def submit_feedback(
+    *,
+    db: Session = Depends(get_db),
+    id: int,
+    feedback_in: ComplaintFeedbackCreate,
+    current_user: User = Depends(get_current_user),
+    request: Request
+) -> Any:
+    """Submit feedback for a resolved complaint."""
+    complaint = db.query(Complaint).filter(Complaint.id == id).first()
+    if not complaint:
+        raise HTTPException(status_code=404, detail="Complaint not found")
+        
+    if complaint.citizen_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Only the citizen who created the complaint can provide feedback")
+        
+    if complaint.status != ComplaintStatus.RESOLVED:
+        raise HTTPException(status_code=400, detail="Feedback can only be provided for resolved complaints")
+        
+    if complaint.feedback:
+        raise HTTPException(status_code=400, detail="Feedback has already been submitted for this complaint")
+        
+    feedback = ComplaintFeedback(
+        complaint_id=complaint.id,
+        user_id=current_user.id,
+        rating=feedback_in.rating,
+        resolved_confirmed=feedback_in.resolved_confirmed,
+        comment=sanitize_text(feedback_in.comment) if feedback_in.comment else None
+    )
+    db.add(feedback)
+    db.commit()
+    db.refresh(feedback)
+    
+    log_audit(db, "FEEDBACK_SUBMITTED", current_user.id, request, f"Complaint ID: {id} Rating: {feedback_in.rating}")
+    return feedback
 
 from app.api.endpoints.evidence import supabase_client
 import os

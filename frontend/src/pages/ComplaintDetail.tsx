@@ -5,9 +5,12 @@ import { useAuth } from '../hooks/useAuth';
 import ComplaintTimeline, { formatStatus, getStatusIcon } from '../components/ComplaintTimeline';
 import AIAnalysisCard from '../components/AIAnalysisCard';
 import EvidenceGallery from '../components/EvidenceGallery';
+import FeedbackForm from '../components/FeedbackForm';
+import ComplaintConversation from '../components/ComplaintConversation';
+import DownloadReportButton from '../components/DownloadReportButton';
 import { DetailSkeleton } from '../components/SkeletonLoader';
 import { format, formatDistanceToNow } from 'date-fns';
-import { MapPin, ArrowLeft, AlertTriangle, Save, Loader2, Phone, Clock, Calendar, Tag } from 'lucide-react';
+import { MapPin, ArrowLeft, AlertTriangle, Save, Loader2, Phone, Clock, Calendar, Tag, CheckCircle, Star } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -58,6 +61,16 @@ const ComplaintDetail = () => {
       let url = `/complaints/${trackingId}`;
       
       const res = await api.get(url);
+      
+      // Also fetch comments
+      try {
+        const commentsRes = await api.get(`/complaints/${res.data.id}/comments`);
+        res.data.comments = commentsRes.data;
+      } catch(e) {
+        console.error('Failed to load comments');
+        res.data.comments = [];
+      }
+
       setComplaint(res.data);
       setNewStatus(res.data.status);
       
@@ -133,12 +146,15 @@ const ComplaintDetail = () => {
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animation-fade-in">
-      <button 
-        onClick={() => navigate(-1)} 
-        className="flex items-center text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white mb-6 transition-colors"
-      >
-        <ArrowLeft className="w-4 h-4 mr-1" /> Back
-      </button>
+      <div className="flex justify-between items-center mb-6">
+        <button 
+          onClick={() => navigate(-1)} 
+          className="flex items-center text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4 mr-1" /> Back
+        </button>
+        {complaint && <DownloadReportButton complaint={complaint} />}
+      </div>
 
       {/* Header */}
       <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm overflow-hidden mb-6">
@@ -254,6 +270,47 @@ const ComplaintDetail = () => {
                 evidenceUrls={evidenceUrls}
               />
             </div>
+
+            {/* Conversation */}
+            <div className="pt-4">
+              <ComplaintConversation 
+                complaintId={complaint.id} 
+                citizenId={complaint.citizen_id}
+                comments={complaint.comments || []}
+                status={complaint.status}
+              />
+            </div>
+
+            {/* Feedback */}
+            {complaint.status === 'RESOLVED' && !complaint.feedback && complaint.citizen_id === user?.id && (
+              <FeedbackForm 
+                complaintId={complaint.id} 
+                onSuccess={(feedback) => {
+                  setComplaint({ ...complaint, feedback });
+                }} 
+              />
+            )}
+
+            {complaint.feedback && (
+              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-emerald-200 dark:border-emerald-900/50 p-6 shadow-sm">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider mb-4 text-emerald-700 dark:text-emerald-400 flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5" /> Citizen Feedback
+                </h3>
+                <div className="flex items-center gap-2 mb-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star
+                      key={star}
+                      className={`w-5 h-5 ${star <= complaint.feedback.rating ? 'fill-amber-400 text-amber-400' : 'text-slate-200 dark:text-slate-700'}`}
+                    />
+                  ))}
+                </div>
+                {complaint.feedback.comment && (
+                  <p className="text-slate-600 dark:text-slate-300 text-sm mt-3 italic">
+                    "{complaint.feedback.comment}"
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Sidebar */}
@@ -263,6 +320,9 @@ const ComplaintDetail = () => {
               aiPriority={complaint.ai_priority}
               aiCategory={complaint.ai_category}
               finalPriority={complaint.final_priority}
+              aiSummary={complaint.ai_summary}
+              aiDepartment={complaint.ai_department}
+              aiNextAction={complaint.ai_next_action}
             />
 
             {/* Contact Info */}

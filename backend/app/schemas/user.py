@@ -37,3 +37,10 @@ class Token(BaseModel):
 
 class TokenPayload(BaseModel):
     sub: Optional[int] = None
+
+class UserStats(BaseModel):
+    total_complaints: int
+    submitted: int
+    in_progress: int
+    resolved: int
+    resolution_rate: float

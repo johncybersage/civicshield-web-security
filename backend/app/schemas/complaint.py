@@ -1,5 +1,6 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 from typing import Optional, List
+from datetime import datetime
 from datetime import datetime
 from app.models.complaint import Priority, ComplaintStatus, LocationSource
 
@@ -48,12 +49,35 @@ class ComplaintEvidenceSchema(BaseModel):
     
     model_config = {"from_attributes": True}
 
+class ComplaintFeedbackCreate(BaseModel):
+    rating: int = Field(..., ge=1, le=5)
+    resolved_confirmed: bool
+    comment: Optional[str] = None
+
+class ComplaintFeedbackSchema(ComplaintFeedbackCreate):
+    id: int
+    complaint_id: int
+    user_id: int
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+
+    model_config = {"from_attributes": True}
+
+class AggregateStats(BaseModel):
+    total_complaints: int
+    resolved_complaints: int
+    resolution_rate: float
+    average_resolution_days: float
+
 class Complaint(ComplaintBase):
     id: int
     tracking_id: Optional[str] = None
     category: Optional[str] = None
     ai_category: Optional[str] = None
     ai_priority: Optional[Priority] = None
+    ai_summary: Optional[str] = None
+    ai_department: Optional[str] = None
+    ai_next_action: Optional[str] = None
     final_priority: Priority
     status: ComplaintStatus
     citizen_id: int
@@ -81,6 +105,7 @@ class ComplaintHistorySchema(BaseModel):
 
 class ComplaintWithHistory(ComplaintWithComments):
     history: List[ComplaintHistorySchema] = []
+    feedback: Optional[ComplaintFeedbackSchema] = None
 
 class PublicComplaintTrackingSchema(BaseModel):
     tracking_id: str

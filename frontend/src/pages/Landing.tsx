@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Shield, Activity, Users, AlertTriangle } from 'lucide-react';
+import ImpactStats from '../components/ImpactStats';
 
 const Landing = () => {
   return (
@@ -59,8 +60,13 @@ const Landing = () => {
         </div>
       </div>
 
+      {/* Impact Stats */}
+      <div className="bg-slate-50 dark:bg-slate-900 border-y border-slate-200 dark:border-slate-800">
+        <ImpactStats />
+      </div>
+
       {/* Feature section */}
-      <div className="py-12 bg-slate-50 dark:bg-slate-900 flex-grow">
+      <div className="py-12 bg-white dark:bg-dark-bg flex-grow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
             <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 hover-lift">
