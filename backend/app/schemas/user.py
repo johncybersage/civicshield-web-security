@@ -1,19 +1,20 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 from datetime import datetime
 from app.models.user import UserRole
 
 class UserBase(BaseModel):
     name: str
-    email: EmailStr
+    email: str  # Changed from EmailStr to allow .local test domains
     phone_number: Optional[str] = None
 
 class UserCreate(UserBase):
     password: str
+    email: EmailStr # Keep strict validation for new user creation
 
 class UserUpdate(BaseModel):
     name: Optional[str] = None
-    email: Optional[EmailStr] = None
+    email: Optional[str] = None
     phone_number: Optional[str] = None
     password: Optional[str] = None
 
