@@ -193,7 +193,7 @@ const CreateComplaint = () => {
           </div>
         ) : (
           <form 
-            onSubmit={(e) => { e.preventDefault(); if (step === 3) handleSubmit(e); }} 
+            onSubmit={(e) => { e.preventDefault(); }} 
             onKeyDown={(e) => {
               // Prevent implicit submission on Enter key, except for textareas
               if (e.key === 'Enter' && (e.target as HTMLElement).tagName !== 'TEXTAREA') {
@@ -371,7 +371,8 @@ const CreateComplaint = () => {
                 </button>
               ) : (
                 <button
-                  type="submit"
+                  type="button"
+                  onClick={(e) => handleSubmit(e)}
                   disabled={loading}
                   className="bg-primary-600 text-white px-8 py-2.5 rounded-xl font-medium hover:bg-primary-700 hover:shadow-lg transition-all disabled:opacity-70 disabled:hover:shadow-none flex items-center"
                 >
