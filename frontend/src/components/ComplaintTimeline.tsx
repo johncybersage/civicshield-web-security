@@ -45,17 +45,27 @@ const ComplaintTimeline: React.FC<TimelineProps> = ({ history }) => {
   // Ensure chronological order (oldest first)
   const sortedHistory = [...history].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 
+  const currentStatus = sortedHistory.length > 0 ? sortedHistory[sortedHistory.length - 1].new_status : 'SUBMITTED';
+  const STANDARD_FLOW = ['SUBMITTED', 'UNDER_REVIEW', 'ASSIGNED', 'IN_PROGRESS', 'RESOLVED'];
+  const currentIndex = STANDARD_FLOW.indexOf(currentStatus);
+  
+  let futureSteps: string[] = [];
+  if (currentIndex !== -1 && currentStatus !== 'RESOLVED' && currentStatus !== 'REJECTED') {
+    futureSteps = STANDARD_FLOW.slice(currentIndex + 1);
+  }
+
   return (
     <div className="relative border-l-2 border-slate-200 ml-3 py-2 space-y-8">
+      {/* Processed (History) Events */}
       {sortedHistory.map((event, index) => {
-        const isLast = index === sortedHistory.length - 1;
+        const isCurrent = index === sortedHistory.length - 1;
         return (
           <div key={event.id} className="relative pl-6">
-            <span className="absolute -left-[13px] top-1 bg-white rounded-full p-0.5 border border-slate-200 shadow-sm">
+            <span className={`absolute -left-[13px] top-1 bg-white rounded-full p-0.5 border ${isCurrent ? 'border-primary-500 shadow-md' : 'border-slate-200 shadow-sm'}`}>
               {getStatusIcon(event.new_status)}
             </span>
             <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between mb-1">
-              <h3 className={`font-semibold ${isLast ? 'text-slate-900' : 'text-slate-700'}`}>
+              <h3 className={`font-semibold ${isCurrent ? 'text-slate-900' : 'text-slate-700'}`}>
                 {formatStatus(event.new_status)}
               </h3>
               <time className="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-1 rounded-md mt-1 sm:mt-0">
@@ -70,6 +80,23 @@ const ComplaintTimeline: React.FC<TimelineProps> = ({ history }) => {
           </div>
         );
       })}
+
+      {/* Pending (Future) Events */}
+      {futureSteps.map((status, index) => (
+        <div key={`future-${status}`} className="relative pl-6 opacity-40 grayscale">
+          <span className="absolute -left-[13px] top-1 bg-white rounded-full p-0.5 border border-slate-200 shadow-sm">
+            {getStatusIcon(status)}
+          </span>
+          <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between mb-1">
+            <h3 className="font-semibold text-slate-500">
+              {formatStatus(status)}
+            </h3>
+            <span className="text-xs font-medium text-slate-400 bg-slate-100 px-2 py-1 rounded-md mt-1 sm:mt-0 uppercase tracking-wider">
+              Pending
+            </span>
+          </div>
+        </div>
+      ))}
     </div>
   );
 };
