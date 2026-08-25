@@ -124,11 +124,11 @@ const ComplaintDetail = () => {
                 {complaint.tracking_id || `ID: ${complaint.id}`}
               </span>
               <div className="flex items-center gap-1.5 bg-white px-3 py-1 rounded-full border border-slate-200 text-sm shadow-sm">
-                {getStatusIcon(complaint.status)}
-                <span className="font-semibold text-slate-700">{formatStatus(complaint.status)}</span>
+                {getStatusIcon(complaint?.status)}
+                <span className="font-semibold text-slate-700">{formatStatus(complaint?.status)}</span>
               </div>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">{complaint.title}</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">{complaint?.title || 'Untitled Complaint'}</h1>
             <div className="flex flex-wrap items-center gap-4 text-sm text-slate-500">
               <span className="flex items-center gap-1">
                 <MapPin className="w-4 h-4" /> {complaint.category || 'General'}
@@ -140,7 +140,7 @@ const ComplaintDetail = () => {
                 </span>
               )}
               <span className="flex items-center gap-1">
-                <Clock className="w-4 h-4" /> {format(new Date(complaint.created_at), 'dd MMM yyyy, h:mm a')}
+                <Clock className="w-4 h-4" /> {complaint?.created_at && !isNaN(new Date(complaint.created_at).getTime()) ? format(new Date(complaint.created_at), 'dd MMM yyyy, h:mm a') : 'Unknown Date'}
               </span>
             </div>
           </div>
@@ -185,7 +185,7 @@ const ComplaintDetail = () => {
           <div className="lg:col-span-2 p-6 sm:p-8">
             <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 border-b border-slate-100 pb-2">Description</h3>
             <div className="prose prose-slate max-w-none text-slate-700 whitespace-pre-wrap mb-8">
-              {complaint.description}
+              {complaint?.description || 'No description provided.'}
             </div>
 
             <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 border-b border-slate-100 pb-2">Location</h3>
@@ -261,7 +261,7 @@ const ComplaintDetail = () => {
             )}
 
             <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 border-b border-slate-200 pb-2">Timeline</h3>
-            <ComplaintTimeline history={complaint.history} />
+            <ComplaintTimeline history={complaint?.history || []} />
           </div>
         </div>
       </div>

@@ -33,7 +33,8 @@ export const getStatusIcon = (status: string) => {
 };
 
 export const formatStatus = (status: string) => {
-  return status.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
+  if (!status) return 'Unknown';
+  return String(status).replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
 };
 
 const ComplaintTimeline: React.FC<TimelineProps> = ({ history }) => {
@@ -58,7 +59,7 @@ const ComplaintTimeline: React.FC<TimelineProps> = ({ history }) => {
                 {formatStatus(event.new_status)}
               </h3>
               <time className="text-xs font-medium text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-md mt-1 sm:mt-0">
-                {format(new Date(event.created_at), 'dd MMM yyyy, h:mm a')}
+                {event.created_at && !isNaN(new Date(event.created_at).getTime()) ? format(new Date(event.created_at), 'dd MMM yyyy, h:mm a') : 'Unknown Date'}
               </time>
             </div>
             {event.note && (
