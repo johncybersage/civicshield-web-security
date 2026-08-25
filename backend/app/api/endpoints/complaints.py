@@ -280,3 +280,56 @@ def create_comment(
     log_audit(db, "COMMENT_ADDED", current_user.id, request, f"Complaint ID: {id}")
     
     return comment
+
+from app.api.endpoints.evidence import supabase_client
+import os
+
+@router.delete("/{id_or_tracking_id}")
+def delete_complaint(
+    *,
+    db: Session = Depends(get_db),
+    id_or_tracking_id: str,
+    current_user: User = Depends(get_current_user),
+    request: Request
+) -> Any:
+    """Securely delete a complaint and its associated evidence files (Citizen only)."""
+    if id_or_tracking_id.isdigit():
+        complaint = db.query(Complaint).filter(Complaint.id == int(id_or_tracking_id)).first()
+    else:
+        complaint = db.query(Complaint).filter(Complaint.tracking_id == id_or_tracking_id).first()
+        
+    if not complaint:
+        raise HTTPException(status_code=404, detail="Complaint not found")
+        
+    if current_user.role != UserRole.CITIZEN:
+        raise HTTPException(status_code=403, detail="Only citizens can delete complaints")
+        
+    if complaint.citizen_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not enough permissions to delete this complaint")
+        
+    # Delete associated evidence files
+    for evidence in complaint.evidence:
+        if evidence.file_path.startswith("supabase://"):
+            if supabase_client:
+                try:
+                    parts = evidence.file_path.replace("supabase://", "").split("/")
+                    bucket_name = parts[0]
+                    filename = "/".join(parts[1:])
+                    supabase_client.storage.from_(bucket_name).remove([filename])
+                except Exception as e:
+                    # Log but do not expose exception to the frontend, prevent blocking the DB deletion
+                    print(f"Failed to delete file from Supabase: {e}")
+        else:
+            if os.path.exists(evidence.file_path):
+                try:
+                    os.remove(evidence.file_path)
+                except Exception as e:
+                    print(f"Failed to delete local file: {e}")
+    
+    complaint_id = complaint.id
+    db.delete(complaint)
+    db.commit()
+    
+    log_audit(db, "COMPLAINT_DELETED", current_user.id, request, f"Complaint ID: {complaint_id} deleted")
+    
+    return {"message": "Complaint deleted successfully"}

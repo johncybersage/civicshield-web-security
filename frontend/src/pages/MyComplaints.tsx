@@ -1,16 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
-import { Search, Filter, Loader2, MapPin, AlertCircle } from 'lucide-react';
+import { Search, Filter, Loader2, MapPin, AlertCircle, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import EmptyState from '../components/EmptyState';
 import { ComplaintCardSkeleton } from '../components/SkeletonLoader';
+import ConfirmationModal from '../components/ConfirmationModal';
 
 const MyComplaints = () => {
   const [complaints, setComplaints] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [complaintToDelete, setComplaintToDelete] = useState<any>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -36,6 +40,29 @@ const MyComplaints = () => {
     const matchesStatus = statusFilter ? c.status === statusFilter : true;
     return matchesSearch && matchesStatus;
   });
+
+  const handleDeleteClick = (complaint: any, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setComplaintToDelete(complaint);
+    setIsModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!complaintToDelete) return;
+    setIsDeleting(true);
+    try {
+      const idToDelete = complaintToDelete.tracking_id || complaintToDelete.id;
+      await api.delete(`/complaints/${idToDelete}`);
+      setComplaints(prev => prev.filter(c => c.id !== complaintToDelete.id));
+      setIsModalOpen(false);
+      setComplaintToDelete(null);
+    } catch (error) {
+      console.error('Failed to delete complaint', error);
+      alert('Failed to delete the complaint. Please try again.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   const getStatusBadge = (status: string) => {
     const styles: Record<string, string> = {
@@ -124,6 +151,14 @@ const MyComplaints = () => {
                 <span className={`text-xs font-medium px-2.5 py-1 rounded-full border ${getStatusBadge(complaint.status)}`}>
                   {complaint.status.replace(/_/g, ' ')}
                 </span>
+                <button
+                  type="button"
+                  onClick={(e) => handleDeleteClick(complaint, e)}
+                  className="ml-2 p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                  title="Delete Complaint"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
               </div>
               
               <h3 className="font-semibold text-slate-900 dark:text-white line-clamp-1 mb-1">{complaint.title}</h3>
@@ -150,6 +185,19 @@ const MyComplaints = () => {
           ))}
         </div>
       )}
+
+      <ConfirmationModal
+        isOpen={isModalOpen}
+        title="Delete Complaint?"
+        message={`Are you sure you want to permanently delete this complaint${complaintToDelete?.tracking_id ? ` (${complaintToDelete.tracking_id})` : ''}? This action cannot be undone. Please confirm that you are deleting this complaint intentionally.`}
+        confirmText="Delete Complaint"
+        onConfirm={confirmDelete}
+        onCancel={() => {
+          setIsModalOpen(false);
+          setComplaintToDelete(null);
+        }}
+        isLoading={isDeleting}
+      />
     </div>
   );
 };
