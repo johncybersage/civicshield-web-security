@@ -17,6 +17,7 @@ interface Complaint {
 const CitizenList = () => {
   const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchComplaints = async () => {
