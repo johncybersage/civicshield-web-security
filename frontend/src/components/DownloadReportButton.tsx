@@ -43,6 +43,23 @@ const DownloadReportButton: React.FC<DownloadReportButtonProps> = ({ complaint }
       
       const createdDate = complaint.created_at ? format(new Date(complaint.created_at), 'dd MMM yyyy, h:mm a') : 'Unknown';
       
+      const sanitizeText = (text: string) => {
+        if (!text) return 'Not provided';
+        // Keep only standard ASCII characters to prevent PDF generation gibberish
+        const cleaned = text.replace(/[^\x00-\x7F]/g, '').replace(/,\s*,/g, ',').trim();
+        // If the string was mostly non-English (e.g. Tamil) and got stripped
+        if (cleaned.length < 5 && text.length > 5) {
+          if (complaint.latitude && complaint.longitude) {
+            return `Coordinates: ${complaint.latitude}, ${complaint.longitude}`;
+          }
+          return 'Location provided in unsupported language format.';
+        }
+        // Remove leading commas if they were left over
+        return cleaned.replace(/^,\s*/, '') || 'Not provided';
+      };
+
+      const safeLocation = sanitizeText(complaint.human_readable_address || complaint.location);
+      
       autoTable(doc, {
         startY: yPos,
         head: [['Field', 'Information']],
@@ -53,7 +70,7 @@ const DownloadReportButton: React.FC<DownloadReportButtonProps> = ({ complaint }
           ['Category', complaint.category || 'Not specified'],
           ['Priority', complaint.final_priority || complaint.ai_priority || 'LOW'],
           ['Date Submitted', createdDate],
-          ['Location', complaint.human_readable_address || complaint.location || 'Not provided']
+          ['Location', safeLocation]
         ],
         theme: 'grid',
         headStyles: { fillColor: [241, 245, 249], textColor: [15, 23, 42], fontStyle: 'bold' },

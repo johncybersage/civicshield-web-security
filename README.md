@@ -3,77 +3,116 @@
 **AI-Powered Secure Community Complaint & Incident Reporting Platform**
 *“Report. Analyze. Protect. Resolve.”*
 
-## 1. Problem Statement
-Local communities often struggle to report public infrastructure and safety issues effectively. Existing methods are fragmented, slow, and lack transparency. Moreover, platforms that handle community data are often vulnerable to common web application attacks, compromising user security.
+CivicShield is a comprehensive civic issue reporting and tracking platform designed for modern communities. It empowers citizens to securely report infrastructure and safety issues, while providing government officers with an AI-enhanced dashboard to efficiently track, manage, and resolve them.
 
-## 2. Solution
-CivicShield is a centralized, AI-enhanced platform where citizens can report issues (e.g., broken streetlights, potholes). The system uses Google Gemini AI to automatically categorize and prioritize complaints, streamlining the workflow for local officers. Importantly, the platform is built with a defense-in-depth security architecture, specifically designed to mitigate Stored Cross-Site Scripting (XSS) attacks.
+## 🌟 Key Features
 
-## 3. Key Features
-- **Role-Based Access Control (RBAC):** Distinct dashboards for Citizens, Officers, and Administrators.
-- **AI-Powered Classification:** Automatic categorization and prioritization of complaints using Google Gemini.
-- **Audit Logging:** Comprehensive tracking of all critical system actions.
-- **Security Event Monitoring:** Dedicated admin view to monitor blocked security threats.
-- **Interactive Security Lab:** An educational module demonstrating a controlled Stored XSS vulnerability and its mitigation.
+- **Citizen & Officer Dashboards:** Role-Based Access Control (RBAC) providing distinct views and privileges for Citizens, Officers, and Admins.
+- **Secure Registration & OTP Verification:** Citizens can register and verify their accounts using Twilio-backed SMS OTP (with a built-in evaluation mode for testing).
+- **Incident Reporting & Evidence Upload:** Users can drop pins on an interactive map, describe issues, and upload photographic evidence securely.
+- **AI-Powered Analysis:** Integration with Google Gemini AI to automatically categorize issues, assign priorities, suggest the correct department, and propose next actions.
+- **Real-Time Tracking & Notifications:** Citizens receive unique Tracking IDs to monitor their complaint's status timeline and get notified of updates via a notification center.
+- **Officer ↔ Citizen Communication:** Secure two-way messaging directly within the complaint details page for clarifications.
+- **Duplicate Detection:** Intelligent frontend duplicate detection prevents multiple reports of the same issue in the same area.
+- **Feedback Loop:** Citizens can rate and review the resolution of their complaints.
+- **Professional PDF Export:** Generate downloadable, formatted PDF reports of complaint details, timelines, and AI insights.
+- **Impact Dashboard:** Public statistics showing total reports, resolution rates, and average response times to drive transparency.
 
-## 4. Web Security Technique: Stored XSS Prevention
-The primary web security focus of this academic project is preventing Stored XSS.
-- **Attack Surface:** Complaint titles, descriptions, and comments.
-- **Defense Mechanism:** 
-  1. Strict input validation using Pydantic.
-  2. Server-side HTML sanitization using `bleach` to neutralize malicious tags.
-  3. Context-aware safe output rendering via React.
-  4. Robust Content Security Policy (CSP) headers via FastAPI middleware.
+## 🛠️ Technology Stack
 
-## 5. Technology Stack
-- **Frontend:** React, TypeScript, Vite, Tailwind CSS, Axios
-- **Backend:** Python, FastAPI, SQLAlchemy, Pydantic, Passlib (Argon2), python-jose
-- **Database:** PostgreSQL (with Alembic for migrations)
+- **Frontend:** React, TypeScript, Vite, Tailwind CSS, jsPDF, Recharts, React Leaflet
+- **Backend:** Python, FastAPI, SQLAlchemy, Pydantic, Alembic, Passlib, python-jose
+- **Database:** PostgreSQL (Supabase)
 - **AI Integration:** Google Generative AI (Gemini)
-- **Infrastructure:** Docker & Docker Compose
+- **Deployment:** Render (Backend) & Vercel (Frontend)
 
-## 6. Installation & Running Instructions
+## 🏗️ Architecture
+
+```text
+React Frontend (Vercel)
+       ↓ (REST API / JWT Auth)
+FastAPI Backend (Render)
+       ↓ (SQLAlchemy)
+PostgreSQL Database (Supabase)
+```
+
+## 🚀 Installation & Local Development
 
 ### Prerequisites
-- Docker and Docker Compose (Recommended)
-- Node.js & npm (for manual frontend run)
-- Python 3.11+ (for manual backend run)
-- PostgreSQL (if running manually)
+- Node.js (v18+)
+- Python (3.11+)
+- PostgreSQL (Local or Supabase)
 
-### Using Docker (Recommended)
-1. Clone the repository and navigate to the project root.
-2. Copy `.env.example` to `.env` and add your Gemini API Key if you want AI features (otherwise it falls back to mock logic).
-   ```bash
-   cp .env.example .env
-   ```
-3. Run docker-compose:
-   ```bash
-   docker compose up --build -d
-   ```
-4. Access the frontend at `http://localhost:5173` and the backend API at `http://localhost:8000`.
+### 1. Database & Environment Setup
+Clone the repository and set up your `.env` file in the `backend/` directory:
 
-### Database Seeding (Demo Accounts)
-If running locally (without docker), you can seed the database:
+```bash
+cp .env.example .env
+```
+
+**Environment Variables (.env)**
+Ensure the following variables are configured without exposing real secrets:
+```env
+DATABASE_URL=postgresql://user:password@localhost:5432/civicshield
+DB_PASSWORD=your_password
+JWT_SECRET=your_secure_random_jwt_secret
+GEMINI_API_KEY=your_gemini_api_key
+OTP_PROVIDER=development  # or 'twilio'
+OTP_DEMO_MODE=true
+DEMO_OTP=123456
+TWILIO_ACCOUNT_SID=
+TWILIO_AUTH_TOKEN=
+TWILIO_PHONE_NUMBER=
+```
+
+### 2. Backend Setup
 ```bash
 cd backend
+python -m venv venv
 source venv/bin/activate
-python seed.py
-```
-**Demo Accounts:**
-- Admin: `admin@demo.local` / `admin_password`
-- Officer: `officer@demo.local` / `officer_password`
-- Citizen: `citizen@demo.local` / `citizen_password`
+pip install -r requirements.txt
 
-## 7. Automated Security Testing
-The project includes automated Pytest suites verifying the XSS defenses and security headers.
+# Run migrations
+alembic upgrade head
+
+# Start the server
+uvicorn app.main:app --reload --port 8000
+```
+
+### 3. Frontend Setup
+```bash
+cd frontend
+npm install
+npm run dev
+```
+The frontend will be available at `http://localhost:5173`.
+
+## 🧪 Testing
+
+The backend includes a comprehensive `pytest` suite testing authentication, authorization, endpoints, and security headers.
+
 ```bash
 cd backend
 pytest tests/
 ```
 
-## 8. Limitations & Future Improvements
-- Currently skips image uploads to focus entirely on XSS text vectors. Future versions can incorporate secure S3-backed image uploads with strict MIME-type validation.
-- The AI fallback mock is simplistic; integrating a local NLP model could improve offline capabilities.
+## 🔐 Demo / Evaluation Credentials
+
+To ease the evaluation process, the application can be seeded with demo accounts.
+
+**Database Seeding:**
+```bash
+cd backend
+python seed.py
+```
+
+**Demo Accounts:**
+- **Admin**: `admin@demo.local` / `admin_password`
+- **Officer**: `officer@demo.local` / `officer_password`
+- **Citizen**: `citizen@demo.local` / `citizen_password`
+
+**OTP Evaluation Mode:**
+When `OTP_DEMO_MODE=true` is set in the `.env` file, SMS delivery is bypassed and the system will accept the evaluation code defined in `DEMO_OTP` (default: `123456`). **Do not use this mode in production.**
 
 ---
-*This project was developed as an academic assignment for Web Exploitation and Defense, highlighting real-world secure software development practices.*
+*Developed as an academic assignment, focusing on secure software development, robust RBAC, and modern full-stack engineering.*

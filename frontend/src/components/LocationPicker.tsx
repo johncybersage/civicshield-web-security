@@ -27,7 +27,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({ onLocationSelect }) => 
 
   const reverseGeocode = async (lat: number, lng: number) => {
     try {
-      const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+      const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=en`);
       const data = await response.json();
       if (data && data.display_name) {
         setAddress(data.display_name);
