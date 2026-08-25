@@ -5,6 +5,7 @@ import { PlusCircle, MapPin, Clock, AlertCircle } from 'lucide-react';
 
 interface Complaint {
   id: number;
+  tracking_id?: string;
   title: string;
   description: string;
   status: string;
@@ -60,15 +61,19 @@ const CitizenList = () => {
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {complaints.map(complaint => (
-            <div key={complaint.id} className="glass-panel p-6 rounded-2xl hover-lift transition-all">
+            <div 
+              key={complaint.id} 
+              onClick={() => navigate(`/complaints/${complaint.tracking_id || complaint.id}`)}
+              className="glass-panel p-6 rounded-2xl hover-lift transition-all cursor-pointer group flex flex-col"
+            >
               <div className="flex justify-between items-start mb-4">
-                <h3 className="font-bold text-lg text-slate-900 line-clamp-1">{complaint.title}</h3>
+                <h3 className="font-bold text-lg text-slate-900 line-clamp-1 group-hover:text-primary-600 transition-colors">{complaint.title}</h3>
                 <span className={`px-2.5 py-1 text-xs font-medium rounded-full ${
                   complaint.status === 'RESOLVED' ? 'bg-green-100 text-green-800' :
                   complaint.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-800' :
                   'bg-yellow-100 text-yellow-800'
                 }`}>
-                  {complaint.status.replace('_', ' ')}
+                  {complaint.status?.replace('_', ' ')}
                 </span>
               </div>
               <p className="text-slate-600 text-sm line-clamp-2 mb-4">{complaint.description}</p>
@@ -83,11 +88,11 @@ const CitizenList = () => {
                 <div className="flex justify-between items-center text-xs text-slate-500">
                   <div className="flex items-center">
                     <Clock className="h-4 w-4 mr-1 text-slate-400" />
-                    {new Date(complaint.created_at).toLocaleDateString()}
+                    {complaint.created_at && !isNaN(new Date(complaint.created_at).getTime()) ? new Date(complaint.created_at).toLocaleDateString() : 'Unknown'}
                   </div>
-                  {complaint.ai_priority && (
-                    <span className="font-medium text-purple-600">AI Priority: {complaint.ai_priority}</span>
-                  )}
+                  <div className="text-primary-600 font-medium group-hover:text-primary-700 flex items-center">
+                    View Details &rarr;
+                  </div>
                 </div>
               </div>
             </div>
