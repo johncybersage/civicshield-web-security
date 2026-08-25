@@ -18,6 +18,7 @@ import ComplaintDetail from './pages/ComplaintDetail';
 import CitizenProfile from './pages/CitizenProfile';
 
 import ErrorBoundary from './components/ErrorBoundary';
+import Footer from './components/Footer';
 
 const RequireAuth = ({ children }: { children: JSX.Element }) => {
   const { user, loading } = useAuth();
@@ -120,6 +121,7 @@ function App() {
                 </Routes>
               </ErrorBoundary>
             </main>
+            <Footer />
           </div>
         </BrowserRouter>
       </AuthProvider>
