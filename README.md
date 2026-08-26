@@ -159,6 +159,19 @@ CivicShield is an academic and demonstration project created for educational pur
 This project is for academic evaluation. All rights reserved.
 
 ---
+👨‍💻 Author Raj(John) K
+
+Cybersecurity Engineering Student | Full-Stack Developer | AI & Cloud Security Enthusiast
+
+🔗 GitHub: https://github.com/johncybersage
+
+💼 LinkedIn: https://www.linkedin.com/in/raj-k-cybersec/
+
+📧 Email: johnraj.kse@gmail.com
+
+Built with ❤️ for cybersecurity education and research.
+
+
 <div align="center">
-  <i>Built with ❤️ by Raj K</i>
+  ⭐ If you found this project useful, consider giving it a star.
 </div>
